@@ -1,4 +1,4 @@
-# Subsonic-API
+# Subsonic-API <a href="https://www.npmjs.com/package/subsonic-api"><img src="https://img.shields.io/npm/v/subsonic-api?style=flat&colorA=000000&colorB =000000"/></a>
 
 A simple API library for interacting with Subsonic-compatible servers
 
