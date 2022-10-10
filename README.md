@@ -15,7 +15,7 @@ import { Subsonic } from "subsonic-api";
 
 const api = new Subsonic({
   url: "https://demo.subsonic.org",
-  type: "subsonic",
+  type: "subsonic", // or "generic" or "navidrome"
 });
 
 await api.login({
