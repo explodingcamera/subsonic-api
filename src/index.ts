@@ -862,13 +862,3 @@ export class SubsonicAPI {
 		return this.#requestJSON<SubsonicBaseResponse>('startScan', args);
 	}
 }
-
-const subsonic = new SubsonicAPI({
-	url: 'https://pogify.explodingcamera.com',
-	type: 'generic',
-});
-
-await subsonic.login({
-	username: 'henry',
-	password: 'R@@L7@ScCzwy^t6&X',
-});
