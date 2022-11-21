@@ -1,6 +1,5 @@
 # Subsonic-API <a href="https://www.npmjs.com/package/subsonic-api"><img src="https://img.shields.io/npm/v/subsonic-api?style=flat&colorA=000000&colorB=efefef"/></a> <a href="https://github.com/explodingcamera/subsonic-api/actions/workflows/test.yml"><img src="https://img.shields.io/github/workflow/status/explodingcamera/subsonic-api/Release?style=flat&colorA=000000"/></a>
 
-[![Release]()]()
 A simple API library for interacting with Subsonic-compatible servers (Up to API version 1.16.1)
 
 ## Installation
