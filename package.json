@@ -13,7 +13,7 @@
   "scripts": {
     "watch": "npm run build:esbuild -- --watch",
     "build": "npm run build:esbuild && npm run types",
-    "build:esbuild": "esbuild src/*.ts --minify --bundle --splitting --chunk-names=chunks/[name]-[hash] --outdir=lib --platform=neutral --external:node-fetch --target=node16 --format=esm",
+    "build:esbuild": "esbuild src/*.ts --minify --bundle --splitting --chunk-names=chunks/[name]-[hash] --outdir=lib --platform=neutral  --external:crypto --external:md5 --external:node-fetch --target=node16 --format=esm",
     "dev": "node --loader=ts-node/esm --no-warnings src/index.ts",
     "release": "release-it",
     "test": "vitest",
@@ -28,7 +28,6 @@
     "@xsd-tools/typescript": "^0.1.1",
     "esbuild": "^0.15.15",
     "eslint": "^8.28.0",
-    "md5": "^2.3.0",
     "np": "^7.6.2",
     "release-it": "^15.5.0",
     "ts-node": "^10.9.1",
@@ -46,6 +45,7 @@
     }
   },
   "dependencies": {
+    "md5": "^2.3.0",
     "node-fetch": "^3.3.0"
   }
 }
