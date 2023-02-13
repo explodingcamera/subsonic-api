@@ -24,18 +24,18 @@
   "devDependencies": {
     "@explodingcamera/eslint-config": "^26.1.0",
     "@types/md5": "^2.3.2",
-    "@types/node": "^18.11.18",
-    "@xsd-tools/typescript": "^0.1.1",
-    "esbuild": "^0.16.17",
-    "eslint": "^8.31.0",
+    "@types/node": "^18.13.0",
+    "@xsd-tools/typescript": "^0.2.0",
+    "esbuild": "^0.17.8",
+    "eslint": "^8.34.0",
     "np": "^7.6.3",
     "release-it": "^15.6.0",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.4",
-    "vite": "^4.0.4",
-    "vitest": "^0.27.1",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vitest": "^0.28.5",
     "xmldom": "^0.6.0",
-    "xsd-tools": "^0.1.1"
+    "xsd-tools": "^0.2.0"
   },
   "release-it": {
     "git": {
