@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2022 Henry Gressmann
+Copyright (c) 2022-2023 Henry Gressmann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
