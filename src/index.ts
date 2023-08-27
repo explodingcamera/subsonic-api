@@ -73,7 +73,7 @@ export default class SubsonicAPI {
 			: await import("crypto").then((crypto) => crypto.webcrypto as Crypto);
 
 		if (globalThis.fetch) {
-			this.#fetch = globalThis.fetch;
+			this.#fetch = globalThis.fetch.bind(globalThis);
 		} else if (typeof window !== "undefined") {
 			this.#fetch = (await import("node-fetch")).default as unknown as typeof fetch;
 		} else {
