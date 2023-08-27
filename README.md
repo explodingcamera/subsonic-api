@@ -10,20 +10,23 @@ $ npm install subsonic-api
 
 ## Example Usage
 
+You can also try out the example on CodeSandbox [here](https://codesandbox.io/p/sandbox/subsonic-api-nlgp4c).
+
 ```ts
 import { SubsonicAPI } from "subsonic-api";
 
 const api = new SubsonicAPI({
-  url: "https://demo.subsonic.org",
-  type: "subsonic", // or "generic" or "navidrome"
+  url: "https://demo.navidrome.org",
+  type: "navidrome", // or "generic" or "subsonic"
 });
 
 await api.login({
-  username: "guest3",
-  password: "guest",
+  username: "demo",
+  password: "demo",
 });
 
 const { randomSongs } = await api.getRandomSongs();
+console.log(randomSongs);
 ```
 
 ## API

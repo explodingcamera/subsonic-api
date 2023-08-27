@@ -152,8 +152,6 @@ export default class SubsonicAPI {
 		url.searchParams.set("t", token);
 		url.searchParams.set("s", salt);
 
-		console.log(url.toString());
-
 		return this.#fetch(url.toString(), {
 			method: "GET",
 			headers: {
