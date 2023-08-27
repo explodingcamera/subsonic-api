@@ -1,9 +1,9 @@
 {
   "name": "subsonic-api",
   "version": "1.2.1",
-  "description": "",
+  "description": "Subsonic API for Node.js and browsers",
   "license": "MIT",
-  "author": "<mail@henrygressmann.de>",
+  "author": "Henry Gressmann <mail@henrygressmann.de>",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -13,7 +13,7 @@
   "scripts": {
     "watch": "npm run build:esbuild -- --watch",
     "build": "npm run build:esbuild && npm run types",
-    "build:esbuild": "esbuild src/*.ts --minify --bundle --splitting --chunk-names=chunks/[name]-[hash] --outdir=lib --platform=neutral  --external:crypto --external:md5 --external:node-fetch --target=node16 --format=esm",
+    "build:esbuild": "esbuild src/*.ts --minify --bundle --outdir=lib --platform=neutral  --external:crypto --external:spark-md5 --external:node-fetch --target=node16 --format=esm",
     "dev": "node --loader=ts-node/esm --no-warnings src/index.ts",
     "release": "release-it",
     "test": "vitest",
@@ -21,8 +21,8 @@
     "preversion": "npm run build"
   },
   "devDependencies": {
-    "@types/md5": "^2.3.2",
     "@types/node": "^20.5.6",
+    "@types/spark-md5": "^3.0.2",
     "esbuild": "^0.19.2",
     "np": "^8.0.4",
     "release-it": "^16.1.5",
@@ -41,7 +41,7 @@
     }
   },
   "dependencies": {
-    "md5": "^2.3.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "spark-md5": "^3.0.2"
   }
 }

@@ -1,4 +1,4 @@
-import md5 from "md5";
+import md5 from "spark-md5";
 
 import type {
 	AlbumID3,
@@ -72,9 +72,13 @@ export default class SubsonicAPI {
 			? globalThis.crypto
 			: await import("crypto").then((crypto) => crypto.webcrypto as Crypto);
 
-		this.#fetch = globalThis.fetch
-			? globalThis.fetch
-			: ((await import("node-fetch")).default as unknown as typeof fetch);
+		if (globalThis.fetch) {
+			this.#fetch = globalThis.fetch;
+		} else if (typeof window !== "undefined") {
+			this.#fetch = (await import("node-fetch")).default as unknown as typeof fetch;
+		} else {
+			throw new Error("fetch not available");
+		}
 
 		this.#user = { username, password };
 		this.authenticated = true;
@@ -99,7 +103,7 @@ export default class SubsonicAPI {
 
 		return {
 			salt,
-			token: md5(password + salt),
+			token: md5.hash(password + salt),
 		};
 	}
 
