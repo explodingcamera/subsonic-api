@@ -224,7 +224,7 @@ export interface Lyrics {
 	title?: string;
 }
 
-export type MediaType = 'music' | 'podcast' | 'audiobook' | 'video';
+export type MediaType = "music" | "podcast" | "audiobook" | "video";
 
 export interface MusicFolder {
 	id: number;
@@ -305,13 +305,7 @@ export interface Podcasts {
 	channel?: PodcastChannel[];
 }
 
-export type PodcastStatus =
-	| 'new'
-	| 'downloading'
-	| 'completed'
-	| 'error'
-	| 'deleted'
-	| 'skipped';
+export type PodcastStatus = "new" | "downloading" | "completed" | "error" | "deleted" | "skipped";
 
 export interface BaseResponse {
 	status: ResponseStatus;
@@ -320,7 +314,7 @@ export interface BaseResponse {
 	serverVersion: string;
 }
 
-export type ResponseStatus = 'ok' | 'failed';
+export type ResponseStatus = "ok" | "failed";
 
 export interface ScanStatus {
 	count?: number;

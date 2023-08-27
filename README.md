@@ -11,9 +11,9 @@ $ npm install subsonic-api
 ## Example Usage
 
 ```ts
-import { Subsonic } from "subsonic-api";
+import { SubsonicAPI } from "subsonic-api";
 
-const api = new Subsonic({
+const api = new SubsonicAPI({
   url: "https://demo.subsonic.org",
   type: "subsonic", // or "generic" or "navidrome"
 });
@@ -23,7 +23,7 @@ await api.login({
   password: "guest",
 });
 
-const { randomSongs } = await subsonic.getRandomSongs();
+const { randomSongs } = await api.getRandomSongs();
 ```
 
 ## API

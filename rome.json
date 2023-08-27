@@ -1,0 +1,26 @@
+{
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 110
+	},
+	"files": {
+		"ignore": ["**/node_modules/*", "**/dist/*", "**/.turbo/*"]
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"style": {
+				"useBlockStatements": "off",
+				"useSingleVarDeclarator": "off",
+				"noUnusedTemplateLiteral": "off",
+				"noNonNullAssertion": "off",
+				"noParameterAssign": "off"
+			},
+			"suspicious": {
+				"noExplicitAny": "off",
+				"noRedeclare": "off"
+			}
+		}
+	}
+}

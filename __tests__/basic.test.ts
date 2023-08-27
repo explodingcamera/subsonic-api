@@ -1,3 +1,3 @@
-import { expect, it } from 'vitest';
+import { expect, it } from "vitest";
 
-it('works', () => expect(true).toBeTruthy());
+it("works", () => expect(true).toBeTruthy());
