@@ -51,6 +51,34 @@ interface LoginOptions {
 }
 ```
 
+### `navidromeSession`
+
+```ts
+subsonicSession(): Promise<SessionInfo>
+```
+
+Creates a new Navidrome session
+
+```ts
+interface SessionInfo {
+  id: string;
+  isAdmin: boolean;
+  name: string;
+  subsonicSalt: string;
+  subsonicToken: string;
+  token: string;
+  username: string;
+}
+```
+
+### `baseURL`
+
+```ts
+baseURL(): string
+```
+
+Returns the base URL of the server. Useful for interacting with other APIs like Navidrome's.
+
 ### `custom`
 
 ```ts

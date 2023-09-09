@@ -16,6 +16,6 @@
     "checkJs": false,
     "declaration": true
   },
-  "include": ["**/src/**/*", "**/__tests__/**/*"],
+  "include": ["**/src/**/*", "**/__tests__/**/*", "example/**/*"],
   "exclude": ["node_modules", "lib"]
 }

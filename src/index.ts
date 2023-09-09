@@ -8,6 +8,7 @@ import type {
 	ArtistInfo,
 	ArtistInfo2,
 	ArtistsID3,
+	ArtistWithAlbumsID3,
 	Bookmarks,
 	ChatMessages,
 	Directory,
@@ -67,7 +68,7 @@ export default class SubsonicAPI {
 		this.#config = config;
 	}
 
-	async login({ username, password }: { username: string; password: string }) {
+	async init() {
 		this.#crypto = globalThis.crypto
 			? globalThis.crypto
 			: await import("crypto").then((crypto) => crypto.webcrypto as Crypto);
@@ -79,6 +80,10 @@ export default class SubsonicAPI {
 		} else {
 			throw new Error("fetch not available");
 		}
+	}
+
+	async login({ username, password }: { username: string; password: string }) {
+		await this.init();
 
 		this.#user = { username, password };
 		this.authenticated = true;
@@ -90,6 +95,33 @@ export default class SubsonicAPI {
 			this.authenticated = false;
 			throw error;
 		}
+	}
+
+	async navidromeSession() {
+		await this.init();
+		if (this.#config.type !== "navidrome")
+			throw new Error("navidromeSession is only available for navidrome");
+		if (!this.#user) throw new Error("not authenticated");
+
+		const base = this.baseURL();
+		const response = await this.#fetch!(`${base}auth/login`, {
+			method: "POST",
+			body: JSON.stringify({ username: this.#user?.username, password: this.#user?.password }),
+		});
+
+		if (!response.ok) return Promise.reject(response.statusText);
+
+		const data: {
+			id: string;
+			isAdmin: boolean;
+			name: string;
+			subsonicSalt: string;
+			subsonicToken: string;
+			token: string;
+			username: string;
+		} = await response.json();
+
+		return data;
 	}
 
 	#generateSalt() {
@@ -121,14 +153,19 @@ export default class SubsonicAPI {
 			.then(async (res) => res?.["subsonic-response"] as Promise<T>);
 	}
 
+	baseURL() {
+		let base = this.#config.url;
+		if (!base.startsWith("http")) base = `https://${base}`;
+		if (!base.endsWith("/")) base += "/";
+		return base;
+	}
+
 	async #request(method: string, params?: Params) {
 		if (!this.authenticated) throw new Error("not authenticated");
 		if (!this.#user) throw new Error("not authenticated");
 		if (!this.#fetch) throw new Error("not authenticated");
 
-		let base = this.#config.url;
-		if (!base.startsWith("http")) base = `https://${base}`;
-		if (!base.endsWith("/")) base += "/";
+		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
 
 		base += `${method}.view`;
@@ -230,7 +267,7 @@ export default class SubsonicAPI {
 	async getArtist(args: { id: string }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
-				artist: ArtistsID3;
+				artist: ArtistWithAlbumsID3;
 			}
 		>("getArtist", args);
 	}
@@ -546,7 +583,21 @@ export default class SubsonicAPI {
 		return this.#request("stream", args);
 	}
 
-	async download(args: { id: string }) {
+	async download(args: {
+		id: string;
+		/**
+		 * Only supported by Navidrome
+		 */
+		maxBitRate?: number;
+		/**
+		 * Only supported by Navidrome
+		 */
+		format?: "raw" | "mp3" | "ogg" | "aac";
+		/**
+		 * Only supported by Navidrome
+		 */
+		timeOffset?: number;
+	}) {
 		return this.#request("download", args);
 	}
 
