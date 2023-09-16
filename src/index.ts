@@ -178,7 +178,7 @@ export default class SubsonicAPI {
 
 		if (params) {
 			for (const [key, value] of Object.entries(params)) {
-				if (!value) continue;
+				if (typeof value === "undefined") continue;
 				if (Array.isArray(value)) {
 					for (const v of value) {
 						url.searchParams.append(key, v.toString());
