@@ -10,10 +10,20 @@
   "files": [
     "lib"
   ],
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    },
+    "./lib": "./lib/index.js",
+    "./lib/index.js": "./lib/index.js",
+    "./lib/index.d.ts": "./lib/index.d.ts"
+  },
   "scripts": {
     "watch": "npm run build:esbuild -- --watch",
     "build": "npm run build:esbuild && npm run types",
-    "build:esbuild": "esbuild src/*.ts --minify --bundle --outdir=lib --platform=neutral  --external:crypto --external:spark-md5 --external:node-fetch --target=node16 --format=esm",
+    "build:esbuild": "esbuild src/*.ts --minify --bundle --outdir=lib --platform=neutral  --external:crypto --external:spark-md5 --target=node16 --format=esm",
     "dev": "bun example/test.ts",
     "release": "release-it",
     "test": "vitest",
@@ -42,7 +52,10 @@
     }
   },
   "dependencies": {
-    "node-fetch": "^3.3.2",
     "spark-md5": "^3.0.2"
-  }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "engineStrict": false
 }

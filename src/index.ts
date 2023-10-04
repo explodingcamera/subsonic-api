@@ -75,11 +75,7 @@ export default class SubsonicAPI {
 
 		if (globalThis.fetch) {
 			this.#fetch = globalThis.fetch.bind(globalThis);
-		} else if (typeof window !== "undefined") {
-			this.#fetch = (await import("node-fetch")).default as unknown as typeof fetch;
-		} else {
-			throw new Error("fetch not available");
-		}
+		} else throw new Error("fetch not available");
 	}
 
 	async login({ username, password }: { username: string; password: string }) {
@@ -229,10 +225,7 @@ export default class SubsonicAPI {
 		>("getMusicFolders", {});
 	}
 
-	async getIndexes(args?: {
-		musicFolderId?: string;
-		ifModifiedSince?: number;
-	}) {
+	async getIndexes(args?: { musicFolderId?: string; ifModifiedSince?: number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				indexes: Indexes;
@@ -304,11 +297,7 @@ export default class SubsonicAPI {
 		>("getVideoInfo", args);
 	}
 
-	async getArtistInfo(args: {
-		id: string;
-		count?: number;
-		includeNotPresent?: boolean;
-	}) {
+	async getArtistInfo(args: { id: string; count?: number; includeNotPresent?: boolean }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				artistInfo: ArtistInfo;
@@ -316,11 +305,7 @@ export default class SubsonicAPI {
 		>("getArtistInfo", args);
 	}
 
-	async getArtistInfo2(args: {
-		id: string;
-		count?: number;
-		includeNotPresent?: boolean;
-	}) {
+	async getArtistInfo2(args: { id: string; count?: number; includeNotPresent?: boolean }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				artistInfo2: ArtistInfo2;
@@ -536,11 +521,7 @@ export default class SubsonicAPI {
 		>("getPlaylist", args);
 	}
 
-	async createPlaylist(args: {
-		playlistId?: string;
-		name: string;
-		songId?: string[];
-	}) {
+	async createPlaylist(args: { playlistId?: string; name: string; songId?: string[] }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				playlist: Playlist;
@@ -645,11 +626,7 @@ export default class SubsonicAPI {
 		>("getShares", {});
 	}
 
-	async createShare(args: {
-		id: string;
-		description?: string;
-		expires?: number;
-	}) {
+	async createShare(args: { id: string; description?: string; expires?: number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				shares: Shares;
@@ -657,11 +634,7 @@ export default class SubsonicAPI {
 		>("createShare", args);
 	}
 
-	async updateShare(args: {
-		id: string;
-		description?: string;
-		expires?: number;
-	}) {
+	async updateShare(args: { id: string; description?: string; expires?: number }) {
 		return this.#requestJSON<SubsonicBaseResponse>("updateShare", args);
 	}
 
@@ -734,11 +707,7 @@ export default class SubsonicAPI {
 		>("getInternetRadioStations", {});
 	}
 
-	async createInternetRadioStation(args: {
-		name: string;
-		streamUrl: string;
-		homepageUrl?: string;
-	}) {
+	async createInternetRadioStation(args: { name: string; streamUrl: string; homepageUrl?: string }) {
 		return this.#requestJSON<SubsonicBaseResponse>("createInternetRadioStation", args);
 	}
 
@@ -785,47 +754,65 @@ export default class SubsonicAPI {
 
 	async createUser(args: {
 		username: string; // The name of the new user.
-		password: string; // The password of the new user, either in clear text of hex-encoded (see above).
+		password: string; // The password of the new user, either in clear text of
+		// hex-encoded (see above).
 		email: string; // The email address of the new user.
 
 		ldapAuthenticated?: string; //	Whether the user is authenicated in LDAP.
 		adminRole?: string; //	Whether the user is administrator.
-		settingsRole?: string; //	Whether the user is allowed to change personal settings and password.
+		settingsRole?: string; //	Whether the user is allowed to change personal
+		//settings and password.
 		streamRole?: string; //	Whether the user is allowed to play files.
-		jukeboxRole?: string; //	Whether the user is allowed to play files in jukebox mode.
+		jukeboxRole?: string; //	Whether the user is allowed to play files in
+		//jukebox mode.
 		downloadRole?: string; //	Whether the user is allowed to download files.
 		uploadRole?: string; //	Whether the user is allowed to upload files.
-		playlistRole?: string; //	Whether the user is allowed to create and delete playlists. Since 1.8.0, changing this role has no effect.
-		coverArtRole?: string; //	Whether the user is allowed to change cover art and tags.
-		commentRole?: string; //	Whether the user is allowed to create and edit comments and ratings.
+		playlistRole?: string; //	Whether the user is allowed to create and delete
+		//playlists. Since 1.8.0, changing this role has no effect.
+		coverArtRole?: string; //	Whether the user is allowed to change cover art
+		//and tags.
+		commentRole?: string; //	Whether the user is allowed to create and edit
+		//comments and ratings.
 		podcastRole?: string; //	Whether the user is allowed to administrate Podcasts.
-		shareRole?: string; //	(Since 1.8.0) Whether the user is allowed to share files with anyone.
-		videoConversionRole?: string; //	(Since 1.15.0) Whether the user is allowed to start video conversions.
-		musicFolderId?: string[]; // (Since 1.12.0) IDs of the music folders the user is allowed access to.
+		shareRole?: string; //	(Since 1.8.0) Whether the user is allowed to
+		//share files with anyone.
+		videoConversionRole?: string; //	(Since 1.15.0) Whether the user is
+		//allowed to start video conversions.
+		musicFolderId?: string[]; // (Since 1.12.0) IDs of the music folders the
+		// user is allowed access to.
 	}) {
 		return this.#requestJSON<SubsonicBaseResponse>("createUser", args);
 	}
 
 	async updateUser(args: {
 		username: string; // The name of the new user.
-		password: string; // The password of the new user, either in clear text of hex-encoded (see above).
+		password: string; // The password of the new user, either in clear text of
+		// hex-encoded (see above).
 		email: string; // The email address of the new user.
 
 		ldapAuthenticated?: string; // Whether the user is authenicated in LDAP.
 		adminRole?: string; // Whether the user is administrator.
-		settingsRole?: string; //	Whether the user is allowed to change personal settings and password.
+		settingsRole?: string; //	Whether the user is allowed to change personal
+		//settings and password.
 		streamRole?: string; //	Whether the user is allowed to play files.
 		jukeboxRole?: string; // Whether the user is allowed to play files in jukebox mode.
 		downloadRole?: string; //	Whether the user is allowed to download files.
 		uploadRole?: string; //	Whether the user is allowed to upload files.
-		playlistRole?: string; //	Whether the user is allowed to create and delete playlists. Since 1.8.0, changing this role has no effect.
-		coverArtRole?: string; //	Whether the user is allowed to change cover art and tags.
-		commentRole?: string; // Whether the user is allowed to create and edit comments and ratings.
+		playlistRole?: string; //	Whether the user is allowed to create and delete
+		//playlists. Since 1.8.0, changing this role has no effect.
+		coverArtRole?: string; //	Whether the user is allowed to change cover art
+		//and tags.
+		commentRole?: string; // Whether the user is allowed to create and edit
+		// comments and ratings.
 		podcastRole?: string; // Whether the user is allowed to administrate Podcasts.
-		shareRole?: string; // (Since 1.8.0) Whether the user is allowed to share files with anyone.
-		videoConversionRole?: string; // (Since 1.15.0) Whether the user is allowed to start video conversions.
-		musicFolderId?: string[]; // (Since 1.12.0) IDs of the music folders the user is allowed access to.
-		maxBitRate?: string; //	(Since 1.13.0) The maximum bit rate for this user. 0 = no limit.
+		shareRole?: string; // (Since 1.8.0) Whether the user is allowed to share
+		// files with anyone.
+		videoConversionRole?: string; // (Since 1.15.0) Whether the user is allowed
+		// to start video conversions.
+		musicFolderId?: string[]; // (Since 1.12.0) IDs of the music folders the
+		// user is allowed access to.
+		maxBitRate?: string; //	(Since 1.13.0) The maximum bit rate for this
+		//user. 0 = no limit.
 	}) {
 		return this.#requestJSON<SubsonicBaseResponse>("createUser", args);
 	}
@@ -846,11 +833,7 @@ export default class SubsonicAPI {
 		>("getBookmarks", {});
 	}
 
-	async createBookmark(args: {
-		id: string;
-		position: number;
-		comment?: string;
-	}) {
+	async createBookmark(args: { id: string; position: number; comment?: string }) {
 		return this.#requestJSON<SubsonicBaseResponse>("createBookmark", args);
 	}
 
@@ -859,19 +842,10 @@ export default class SubsonicAPI {
 	}
 
 	async getPlayQueue() {
-		return this.#requestJSON<
-			| SubsonicBaseResponse &
-					Partial<{
-						playQueue: PlayQueue;
-					}>
-		>("getPlayQueue", {});
+		return this.#requestJSON<SubsonicBaseResponse & Partial<{ playQueue: PlayQueue }>>("getPlayQueue", {});
 	}
 
-	async savePlayQueue(args: {
-		id: string;
-		current?: string;
-		position: number;
-	}) {
+	async savePlayQueue(args: { id: string; current?: string; position: number }) {
 		return this.#requestJSON<SubsonicBaseResponse>("savePlayQueue", args);
 	}
 
@@ -886,7 +860,8 @@ export default class SubsonicAPI {
 	}
 
 	/**
-	 * @description Start scanning media library. (fullScan is only supported by Navidrome)
+	 * @description Start scanning media library. (fullScan is only supported by
+	 * Navidrome)
 	 */
 	async startScan(args?: { fullScan?: boolean }) {
 		return this.#requestJSON<SubsonicBaseResponse>("startScan", args);
