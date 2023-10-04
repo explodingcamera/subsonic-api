@@ -25,6 +25,7 @@
     "build": "npm run build:bun && npm run types",
     "build:bun": "bun build ./src/index.ts --minify --outdir=lib --target=node --external:crypto --format=esm",
     "dev": "bun example/test.ts",
+    "test": "bun test",
     "release": "release-it",
     "types": "tsc -p tsconfig.build.json",
     "preversion": "npm run build"
