@@ -22,26 +22,20 @@
   },
   "scripts": {
     "watch": "npm run build:esbuild -- --watch",
-    "build": "npm run build:esbuild && npm run types",
-    "build:esbuild": "esbuild src/*.ts --minify --bundle --outdir=lib --platform=neutral  --external:crypto --external:spark-md5 --target=node16 --format=esm",
+    "build": "npm run build:bun && npm run types",
+    "build:bun": "bun build ./src/index.ts --minify --outdir=lib --target=node --external:crypto --format=esm",
     "dev": "bun example/test.ts",
     "release": "release-it",
-    "test": "vitest",
     "types": "tsc -p tsconfig.build.json",
     "preversion": "npm run build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.2.2",
     "@biomejs/cli-linux-x64": "^1.2.2",
-    "@types/node": "^20.6.5",
     "@types/spark-md5": "^3.0.2",
-    "esbuild": "^0.19.3",
-    "np": "^8.0.4",
+    "bun-types": "^1.0.4",
     "release-it": "^16.2.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.2.2",
-    "vite": "^4.4.9",
-    "vitest": "^0.34.5"
+    "spark-md5": "^3.0.2"
   },
   "release-it": {
     "git": {
@@ -50,9 +44,6 @@
     "github": {
       "release": true
     }
-  },
-  "dependencies": {
-    "spark-md5": "^3.0.2"
   },
   "engines": {
     "node": ">=18"

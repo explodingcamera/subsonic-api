@@ -17,8 +17,8 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Build Deps
-        run: bun run build
+      - name: Install Dependencies & Build
+        run: bun install && bun run build
 
       - name: Run Tests
         run: bun run test

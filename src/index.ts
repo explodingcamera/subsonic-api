@@ -71,7 +71,7 @@ export default class SubsonicAPI {
 	async init() {
 		this.#crypto = globalThis.crypto
 			? globalThis.crypto
-			: await import("crypto").then((crypto) => crypto.webcrypto as Crypto);
+			: await import("node:crypto").then((crypto) => (crypto as any).webcrypto as Crypto);
 
 		if (globalThis.fetch) {
 			this.#fetch = globalThis.fetch.bind(globalThis);

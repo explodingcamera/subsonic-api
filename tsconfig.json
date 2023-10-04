@@ -9,13 +9,26 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["DOM", "ESNext"],
+    "lib": [
+      "DOM",
+      "ESNext"
+    ],
     "module": "ESNext",
     "outDir": "./lib",
     "allowJs": true,
     "checkJs": false,
-    "declaration": true
+    "declaration": true,
+    "types": [
+      "bun-types"
+    ]
   },
-  "include": ["**/src/**/*", "**/__tests__/**/*", "example/**/*"],
-  "exclude": ["node_modules", "lib"]
+  "include": [
+    "**/src/**/*",
+    "**/__tests__/**/*",
+    "example/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
+  ]
 }
