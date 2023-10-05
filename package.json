@@ -7,8 +7,28 @@
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/explodingcamera/subsonic-api.git"
+  },
+  "keywords": [
+    "subsonic",
+    "api",
+    "music",
+    "streaming",
+    "media",
+    "player",
+    "client",
+    "server",
+    "node",
+    "browser",
+    "typescript"
+  ],
+  "homepage": "https://github.com/explodingcamera/subsonic-api",
   "files": [
-    "lib"
+    "lib",
+    "README.md",
+    "LICENSE.md"
   ],
   "exports": {
     ".": {
