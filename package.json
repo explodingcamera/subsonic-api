@@ -1,6 +1,6 @@
 {
   "name": "subsonic-api",
-  "version": "2.0.0-0",
+  "version": "2.0.0",
   "description": "Subsonic API for Node.js and browsers",
   "license": "MIT",
   "author": "Henry Gressmann <mail@henrygressmann.de>",
