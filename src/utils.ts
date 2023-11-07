@@ -1,6 +1,6 @@
 export function arrayBufferToBase64(bytes: Uint8Array) {
 	if (typeof globalThis.Buffer !== "undefined") {
-		return Buffer.from(bytes).toString("base64url");
+		return Buffer.from(bytes).toString("base64");
 	}
 
 	let binary = "";
