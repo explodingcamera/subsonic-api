@@ -122,7 +122,6 @@ export default class SubsonicAPI {
 
 	#generateSalt() {
 		if (!this.#crypto) throw new Error("crypto not available");
-
 		return arrayBufferToBase64(this.#crypto.getRandomValues(new Uint8Array(16)));
 	}
 
