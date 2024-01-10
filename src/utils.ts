@@ -1,5 +1,5 @@
 export function arrayBufferToBase64(bytes: Uint8Array) {
-	if (typeof globalThis.Buffer !== "undefined" && Buffer.isEncoding('base64url')) {
+	if (typeof globalThis.Buffer !== "undefined" && Buffer.isEncoding("base64url")) {
 		return Buffer.from(bytes).toString("base64url");
 	}
 

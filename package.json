@@ -44,18 +44,18 @@
     "watch": "npm run build:esbuild -- --watch",
     "build": "npm run build:bun && npm run types",
     "build:bun": "bun build ./src/index.ts --minify --outdir=lib --target=node --external:crypto --format=esm",
-    "dev": "bun example/test.ts",
+    "dev": "bun examples/index.ts",
     "test": "bun test",
     "release": "release-it",
     "types": "tsc -p tsconfig.build.json",
     "preversion": "npm run build"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.4.1",
-    "@biomejs/cli-linux-x64": "^1.4.1",
+    "@biomejs/biome": "^1.5.0",
+    "@biomejs/cli-linux-x64": "^1.5.0",
     "@types/spark-md5": "^3.0.4",
-    "bun-types": "^1.0.15",
-    "release-it": "^17.0.0",
+    "bun-types": "^1.0.21",
+    "release-it": "^17.0.1",
     "spark-md5": "^3.0.2"
   },
   "release-it": {
