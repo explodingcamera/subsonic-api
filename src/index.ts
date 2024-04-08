@@ -44,7 +44,7 @@ import { arrayBufferToBase64 } from "./utils.js";
 
 export interface SubsonicConfig {
 	url: string;
-	type: "subsonic" | "generic" | "navidrome";
+	type: "subsonic" | "opensubsonic" | "navidrome";
 }
 
 export type Params = Record<string, string | string[] | number | number[] | boolean | undefined>;
@@ -52,8 +52,9 @@ export type Params = Record<string, string | string[] | number | number[] | bool
 export interface SubsonicBaseResponse {
 	status: string;
 	version: string;
-	type: string;
-	serverVersion: string;
+	type?: string;
+	serverVersion?: string;
+	openSubsonic?: boolean;
 }
 
 export default class SubsonicAPI {
