@@ -1,109 +1,75 @@
 import md5 from "spark-md5";
-
-import type {
-	AlbumID3,
-	AlbumInfo,
-	AlbumList,
-	AlbumList2,
-	ArtistInfo,
-	ArtistInfo2,
-	ArtistWithAlbumsID3,
-	ArtistsID3,
-	Bookmarks,
-	ChatMessages,
-	Directory,
-	Genres,
-	Indexes,
-	InternetRadioStations,
-	License,
-	MusicFolders,
-	NewestPodcasts,
-	NowPlaying,
-	PlayQueue,
-	Playlist,
-	Playlists,
-	Podcasts,
-	ScanStatus,
-	SearchResult2,
-	SearchResult3,
-	Shares,
-	SimilarSongs,
-	SimilarSongs2,
-	Songs,
-	Starred,
-	Starred2,
-	TopSongs,
-	User,
-	Users,
-	VideoInfo,
-	Videos,
-} from "./types.js";
-export * from "./types.js";
-
 import { arrayBufferToBase64 } from "./utils.js";
 
-export interface SubsonicConfig {
+// biome-ignore format:
+import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Directory, Genres, Indexes, InternetRadioStations, License, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
+export * from "./types.js";
+
+interface SubsonicConfig {
+	// The base URL of the Subsonic server, e.g., https://demo.navidrome.org.
 	url: string;
-	type: "subsonic" | "opensubsonic" | "navidrome";
+
+	// The authentication details to use when connecting to the server.
+	auth: {
+		username: string;
+		password: string;
+	};
+
+	// A salt to use when hashing the password
+	salt?: string;
+
+	// Whether to reuse generated salts. If not provided,
+	// a random salt will be generated for each request.
+	// Ignored if `salt` is provided.
+	reuseSalt?: boolean;
+
+	// Whether to use a POST requests instead of GET requests.
+	// Only supported by OpenSubsonic compatible servers.
+	post?: boolean;
+
+	// The fetch implementation to use. If not provided, the global fetch will be used.
+	fetch?: typeof fetch;
+
+	// The crypto implementation to use. If not provided, the global WebCrypto object
+	// or the Node.js crypto module will be used.
+	crypto?: Crypto;
 }
 
-export type Params = Record<string, string | string[] | number | number[] | boolean | undefined>;
-
-export interface SubsonicBaseResponse {
-	status: string;
-	version: string;
-	type?: string;
-	serverVersion?: string;
-	openSubsonic?: boolean;
-}
+export type SubsonicBaseResponse =
+	| {
+			status: string;
+			version: string;
+			openSubsonic?: false;
+	  }
+	| {
+			status: string;
+			version: string;
+			openSubsonic: true;
+			type: string;
+			serverVersion: string;
+	  };
 
 export default class SubsonicAPI {
 	#config: SubsonicConfig;
-	#fetch?: typeof fetch;
+	#fetch: typeof fetch;
 	#crypto?: Crypto;
-	#user?: { username: string; password: string };
-
-	authenticated = false;
 
 	constructor(config: SubsonicConfig) {
 		this.#config = config;
+
+		this.#crypto = config.crypto || globalThis.crypto;
+		this.#fetch = config.fetch || globalThis.fetch;
+		if (!this.#fetch) throw new Error("no fetch implementation available");
 	}
 
-	async init() {
-		this.#crypto = globalThis.crypto
-			? globalThis.crypto
-			: await import("node:crypto").then((crypto) => (crypto as any).webcrypto as Crypto);
-
-		if (globalThis.fetch) {
-			this.#fetch = globalThis.fetch.bind(globalThis);
-		} else throw new Error("fetch not available");
-	}
-
-	async login({ username, password }: { username: string; password: string }) {
-		await this.init();
-
-		this.#user = { username, password };
-		this.authenticated = true;
-
-		try {
-			await this.ping();
-		} catch (error: unknown) {
-			this.#user = undefined;
-			this.authenticated = false;
-			throw error;
-		}
-	}
-
+	/**
+	 * Connect to the auth api of a navidrome server and fetch the session token.
+	 */
 	async navidromeSession() {
-		await this.init();
-		if (this.#config.type !== "navidrome")
-			throw new Error("navidromeSession is only available for navidrome");
-		if (!this.#user) throw new Error("not authenticated");
-
 		const base = this.baseURL();
 		const response = await this.#fetch!(`${base}auth/login`, {
 			method: "POST",
-			body: JSON.stringify({ username: this.#user?.username, password: this.#user?.password }),
+			body: JSON.stringify({ username: this.#config.auth.username, password: this.#config.auth.password }),
 		});
 
 		if (!response.ok) return Promise.reject(response.statusText);
@@ -121,29 +87,36 @@ export default class SubsonicAPI {
 		return data;
 	}
 
-	#generateSalt() {
-		if (!this.#crypto) throw new Error("crypto not available");
+	async #generateSalt() {
+		if (!this.#crypto) {
+			try {
+				this.#crypto = await import("node:crypto").then((crypto) => (crypto as any).webcrypto as Crypto);
+			} catch (_) {
+				throw new Error("crypto not available");
+			}
+		}
 		return arrayBufferToBase64(this.#crypto.getRandomValues(new Uint8Array(16)));
 	}
 
-	#generateToken(password: string) {
-		const salt = this.#generateSalt();
-
+	async #generateToken(password: string) {
+		let salt = this.#config.salt;
+		if (!salt || !this.#config.reuseSalt) salt = await this.#generateSalt();
+		if (this.#config.reuseSalt) this.#config.salt = salt;
 		return {
 			salt,
 			token: md5.hash(password + salt),
 		};
 	}
 
-	async custom(method: string, params: Params) {
+	async custom(method: string, params: Record<string, unknown>) {
 		return this.#request(method, params);
 	}
 
-	async customJSON<T>(method: string, params: Params) {
+	async customJSON<T>(method: string, params: Record<string, unknown>) {
 		return this.#requestJSON<T>(method, params);
 	}
 
-	async #requestJSON<T>(method: string, args?: Params) {
+	async #requestJSON<T>(method: string, args?: Record<string, unknown>) {
 		return this.#request(method, args)
 			.then(async (res) => res.json())
 			.then(async (res) => res?.["subsonic-response"] as Promise<T>);
@@ -156,11 +129,7 @@ export default class SubsonicAPI {
 		return base;
 	}
 
-	async #request(method: string, params?: Params) {
-		if (!this.authenticated) throw new Error("not authenticated");
-		if (!this.#user) throw new Error("not authenticated");
-		if (!this.#fetch) throw new Error("not authenticated");
-
+	async #request(method: string, params?: Record<string, unknown>) {
 		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
 
@@ -170,11 +139,11 @@ export default class SubsonicAPI {
 		url.searchParams.set("v", "1.16.1");
 		url.searchParams.set("c", "subsonic-api");
 		url.searchParams.set("f", "json");
-		url.searchParams.set("u", this.#user.username);
+		url.searchParams.set("u", this.#config.auth.username);
 
 		if (params) {
 			for (const [key, value] of Object.entries(params)) {
-				if (typeof value === "undefined") continue;
+				if (typeof value === "undefined" || value === null) continue;
 				if (Array.isArray(value)) {
 					for (const v of value) {
 						url.searchParams.append(key, v.toString());
@@ -185,9 +154,20 @@ export default class SubsonicAPI {
 			}
 		}
 
-		const { token, salt } = this.#generateToken(this.#user.password);
+		const { token, salt } = await this.#generateToken(this.#config.auth.password);
 		url.searchParams.set("t", token);
 		url.searchParams.set("s", salt);
+
+		if (this.#config.post) {
+			const [path, search] = url.toString().split("?");
+			return this.#fetch(path, {
+				method: "POST",
+				body: search,
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+			});
+		}
 
 		return this.#fetch(url.toString(), {
 			method: "GET",
@@ -195,6 +175,18 @@ export default class SubsonicAPI {
 				"Content-Type": "application/json",
 			},
 		});
+	}
+
+	// -----------------
+	// OPENSUBSONIC APIs
+	// -----------------
+
+	async getOpenSubsonicExtensions() {
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				openSubsonicExtensions: OpenSubsonicExtensions[];
+			}
+		>("getOpenSubsonicExtensions", {});
 	}
 
 	// ----------
@@ -860,8 +852,8 @@ export default class SubsonicAPI {
 	}
 
 	/**
-	 * @description Start scanning media library. (fullScan is only supported by
-	 * Navidrome)
+	 * Start scanning the media library.
+	 * @param args.fullScan Only supported by navidrome - whether to do a full scan, or just an incremental scan.
 	 */
 	async startScan(args?: { fullScan?: boolean }) {
 		return this.#requestJSON<SubsonicBaseResponse>("startScan", args);

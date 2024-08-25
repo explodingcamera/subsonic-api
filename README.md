@@ -1,11 +1,12 @@
 # Subsonic-API <a href="https://www.npmjs.com/package/subsonic-api"><img src="https://img.shields.io/npm/v/subsonic-api?style=flat&colorA=000000&colorB=efefef"/></a> <a href="https://github.com/explodingcamera/subsonic-api/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/explodingcamera/subsonic-api/test.yml?branch=main&style=flat&colorA=000000"/></a>
 
-A simple API library for interacting with Subsonic-compatible servers (Up to API version 1.16.1) written in TypeScript. Supports Node.js >= 18, bun >= 1 and modern Browsers. No dependencies and less than 4kb minified and gzipped.
+A simple API library for interacting with Subsonic/Opensubsonic-compatible servers written in TypeScript. Supports Node.js >= 18, bun >= 1 and modern Browsers. Less than 5kb minified and gzipped.
 
 ## Installation
 
 ```bash
-$ npm install subsonic-api
+$ npm install subsonic-api # or
+$ bun add subsonic-api
 ```
 
 ## Example Usage
@@ -17,12 +18,10 @@ import { SubsonicAPI } from "subsonic-api";
 
 const api = new SubsonicAPI({
   url: "https://demo.navidrome.org",
-  type: "navidrome", // or "generic" or "subsonic"
-});
-
-await api.login({
-  username: "demo",
-  password: "demo",
+  auth: {
+    username: "demo",
+    password: "demo",
+  },
 });
 
 const { randomSongs } = await api.getRandomSongs();
@@ -31,23 +30,48 @@ console.log(randomSongs);
 
 ## API
 
-`subsonic-api` supports all of the Subsonic API methods as documented [here](http://www.subsonic.org/pages/api.jsp), up to API version 1.16.1 / Subsonic 6.1.4.
+`subsonic-api` supports all of the Subsonic API methods as documented [here](http://www.subsonic.org/pages/api.jsp), up to API version 1.16.1 / Subsonic 6.1.4. Additionally, most of [OpenSubsonic's new API methods](https://opensubsonic.netlify.app/) are also supported.
 All methods return a promise that resolves to the JSON response from the server.
 
 Additionally, the following methods are available:
 
-### `login`
+### `new SubsonicAPI`
 
 ```ts
-login(options: LoginOptions): Promise<void>
+new SubsonicAPI(config: SubsonicConfig)
 ```
 
-Logs in to the server and stores the password for future requests.
+Creates a new SubsonicAPI instance.
 
 ```ts
-interface LoginOptions {
-  username: string;
-  password: string;
+interface SubsonicConfig {
+  // The base URL of the Subsonic server, e.g., https://demo.navidrome.org.
+  url: string;
+
+  // The authentication details to use when connecting to the server.
+  auth: {
+    username: string;
+    password: string;
+  };
+
+  // A salt to use when hashing the password
+  salt?: string;
+
+  // Whether to reuse generated salts. If not provided,
+  // a random salt will be generated for each request.
+  // Ignored if `salt` is provided.
+  reuseSalt?: boolean;
+
+  // Whether to use a POST requests instead of GET requests.
+  // Only supported by OpenSubsonic compatible servers.
+  post?: boolean;
+
+  // The fetch implementation to use. If not provided, the global fetch will be used.
+  fetch?: Fetch;
+
+  // The crypto implementation to use. If not provided, the global WebCrypto object
+  // or the Node.js crypto module will be used.
+  crypto?: WebCrypto;
 }
 ```
 

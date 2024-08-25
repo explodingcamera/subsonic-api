@@ -1,4 +1,12 @@
-import { api } from ".";
+import { SubsonicAPI } from "../src";
+
+const api = new SubsonicAPI({
+	url: "https://demo.navidrome.org",
+	auth: {
+		password: "demo",
+		username: "demo",
+	},
+});
 
 const { artists } = await api.getArtists();
 const allArtists = artists.index?.flatMap((i) => i.artist) ?? [];

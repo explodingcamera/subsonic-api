@@ -1,13 +1,19 @@
-import { SubsonicAPI } from "../lib";
+import { SubsonicAPI } from "../src";
 
 const api = new SubsonicAPI({
 	url: "https://demo.navidrome.org",
-	type: "navidrome", // or "generic" or "subsonic"
+	auth: {
+		password: "demo",
+		username: "demo",
+	},
 });
 
-await api.login({
-	username: "demo",
-	password: "demo",
-});
+const res = await api.ping();
+
+if (res.openSubsonic) {
+	console.log(`Connected to a ${res.type} server with support for OpenSubsonic`);
+} else {
+	console.log(`Connected to a Subsonic ${res.version} server`);
+}
 
 export { api };

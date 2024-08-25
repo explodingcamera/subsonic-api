@@ -428,3 +428,8 @@ export interface VideoInfo {
 export interface Videos {
 	video?: Child[];
 }
+
+export interface OpenSubsonicExtensions {
+	name: string;
+	versions: number[];
+}
