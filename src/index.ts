@@ -2,36 +2,46 @@ import md5 from "spark-md5";
 import { arrayBufferToBase64 } from "./utils.js";
 
 // biome-ignore format:
-import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Directory, Genres, Indexes, InternetRadioStations, License, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
+import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Directory, Genres, Indexes, InternetRadioStations, License, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
 export * from "./types.js";
 
 interface SubsonicConfig {
-	// The base URL of the Subsonic server, e.g., https://demo.navidrome.org.
+	/** The base URL of the Subsonic server, e.g., https://demo.navidrome.org. */
 	url: string;
 
-	// The authentication details to use when connecting to the server.
+	/** The authentication details to use when connecting to the server. */
 	auth: {
 		username: string;
 		password: string;
 	};
 
-	// A salt to use when hashing the password
+	/** A salt to use when hashing the password (optional). */
 	salt?: string;
 
-	// Whether to reuse generated salts. If not provided,
-	// a random salt will be generated for each request.
-	// Ignored if `salt` is provided.
+	/**
+	 * Whether to reuse generated salts.
+	 *
+	 * If not provided, a random salt will be generated for each request.
+	 *
+	 * Ignored if `salt` is provided.
+	 */
 	reuseSalt?: boolean;
 
-	// Whether to use a POST requests instead of GET requests.
-	// Only supported by OpenSubsonic compatible servers.
+	/**
+	 * Whether to use a POST requests instead of GET requests.
+	 *
+	 * Only supported by OpenSubsonic compatible servers with the `formPost` extension.
+	 */
 	post?: boolean;
 
-	// The fetch implementation to use. If not provided, the global fetch will be used.
+	/** The fetch implementation to use. If not provided, the global fetch will be used. */
 	fetch?: typeof fetch;
 
-	// The crypto implementation to use. If not provided, the global WebCrypto object
-	// or the Node.js crypto module will be used.
+	/**
+	 * The crypto implementation to use.
+	 *
+	 * If not provided, the global WebCrypto object or the Node.js crypto module will be used.
+	 */
 	crypto?: Crypto;
 }
 
@@ -108,10 +118,16 @@ export default class SubsonicAPI {
 		};
 	}
 
+	/**
+	 * Make a custom request to the Subsonic server.
+	 */
 	async custom(method: string, params: Record<string, unknown>) {
 		return this.#request(method, params);
 	}
 
+	/**
+	 * Make a custom JSON request to the Subsonic server.
+	 */
 	async customJSON<T>(method: string, params: Record<string, unknown>) {
 		return this.#requestJSON<T>(method, params);
 	}
@@ -122,6 +138,9 @@ export default class SubsonicAPI {
 			.then(async (res) => res?.["subsonic-response"] as Promise<T>);
 	}
 
+	/**
+	 * Get the base URL of the Subsonic server.
+	 */
 	baseURL() {
 		let base = this.#config.url;
 		if (!base.startsWith("http")) base = `https://${base}`;
@@ -181,12 +200,32 @@ export default class SubsonicAPI {
 	// OPENSUBSONIC APIs
 	// -----------------
 
+	/**
+	 * List the OpenSubsonic extensions supported by this server.\
+	 * Only supported by OpenSubsonic compatible servers.
+	 *
+	 * https://opensubsonic.netlify.app/docs/endpoints/getopensubsonicextensions/
+	 */
 	async getOpenSubsonicExtensions() {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				openSubsonicExtensions: OpenSubsonicExtensions[];
 			}
 		>("getOpenSubsonicExtensions", {});
+	}
+
+	/**
+	 * Get structured lyrics for a song.\
+	 * Only supported by OpenSubsonic compatible servers with the `songLyrics` extension.
+	 *
+	 * https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
+	 */
+	async getLyricsBySongId(args: { id: string }) {
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				lyricsList: StructuredLyrics[];
+			}
+		>("getLyricsBySongId", args);
 	}
 
 	// ----------

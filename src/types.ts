@@ -433,3 +433,19 @@ export interface OpenSubsonicExtensions {
 	name: string;
 	versions: number[];
 }
+
+// OpenSubsonic Extensions
+
+export interface StructuredLyrics {
+	lang: string;
+	synced: boolean;
+	line: Line[];
+	displayArtist?: string;
+	displayTitle?: string;
+	offset?: number;
+}
+
+export interface Line {
+	value: string;
+	start?: number;
+}

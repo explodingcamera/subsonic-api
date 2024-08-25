@@ -63,7 +63,7 @@ interface SubsonicConfig {
   reuseSalt?: boolean;
 
   // Whether to use a POST requests instead of GET requests.
-  // Only supported by OpenSubsonic compatible servers.
+  // Only supported by OpenSubsonic compatible servers with the `formPost` extension.
   post?: boolean;
 
   // The fetch implementation to use. If not provided, the global fetch will be used.
