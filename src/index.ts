@@ -1,5 +1,5 @@
-import md5 from "spark-md5";
 import { arrayBufferToBase64 } from "./utils.js";
+import { md5 } from "./md5";
 
 // biome-ignore format:
 import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Directory, Genres, Indexes, InternetRadioStations, License, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
@@ -65,10 +65,18 @@ export default class SubsonicAPI {
 	#crypto?: Crypto;
 
 	constructor(config: SubsonicConfig) {
-		this.#config = config;
+		if (!config) throw new Error("no config provided");
+		if (!config.url) throw new Error("no url provided");
+		if (!config.auth) throw new Error("no auth provided");
+		if (!config.auth.username) throw new Error("no username provided");
+		if (!config.auth.password) throw new Error("no password provided");
 
+		this.#config = config;
 		this.#crypto = config.crypto || globalThis.crypto;
-		this.#fetch = config.fetch || globalThis.fetch;
+		if (!this.#crypto && !this.#config.salt)
+			throw new Error("no crypto implementation available. Provide a salt or crypto implementation.");
+
+		this.#fetch = (config.fetch || globalThis.fetch).bind(globalThis);
 		if (!this.#fetch) throw new Error("no fetch implementation available");
 	}
 
@@ -114,7 +122,7 @@ export default class SubsonicAPI {
 		if (this.#config.reuseSalt) this.#config.salt = salt;
 		return {
 			salt,
-			token: md5.hash(password + salt),
+			token: md5(password + salt),
 		};
 	}
 

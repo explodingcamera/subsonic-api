@@ -5,11 +5,7 @@
 		"lineWidth": 110
 	},
 	"files": {
-		"ignore": [
-			"**/node_modules/*",
-			"**/dist/*",
-			"**/.turbo/*"
-		]
+		"ignore": ["**/node_modules/*", "**/dist/*", "src/md5.ts", "**/.turbo/*"]
 	},
 	"linter": {
 		"enabled": true,

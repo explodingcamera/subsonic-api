@@ -6,6 +6,7 @@ const api = new SubsonicAPI({
 		password: "demo",
 		username: "demo",
 	},
+	fetch,
 });
 
 const res = await api.ping();
