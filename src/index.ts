@@ -1,5 +1,5 @@
 import { arrayBufferToBase64 } from "./utils.js";
-import { md5 } from "./md5";
+import { md5 } from "./md5.js";
 
 // biome-ignore format:
 import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Directory, Genres, Indexes, InternetRadioStations, License, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";

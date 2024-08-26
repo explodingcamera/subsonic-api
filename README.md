@@ -1,12 +1,24 @@
 # Subsonic-API <a href="https://www.npmjs.com/package/subsonic-api"><img src="https://img.shields.io/npm/v/subsonic-api?style=flat&colorA=000000&colorB=efefef"/></a> <a href="https://github.com/explodingcamera/subsonic-api/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/explodingcamera/subsonic-api/test.yml?branch=main&style=flat&colorA=000000"/></a>
 
-A simple API library for interacting with Subsonic/Opensubsonic-compatible servers written in TypeScript. Supports Node.js >= 18, bun >= 1 and modern Browsers. 3kb minified and gzipped.
+A lightweight Subsonic/Opensubsonic Client written in TypeScript. Supports Node, Deno, Bun, and modern Browsers.
+
+## Features
+
+- Supports all Subsonic API methods up to version 1.16.1 / Subsonic 6.1.4.
+- Supports most of OpenSubsonic's new API methods.
+- Supports both GET and POST requests.
 
 ## Installation
 
 ```bash
-$ npm install subsonic-api # or
-$ bun add subsonic-api
+$ npm install subsonic-api  # npm
+$ bun add subsonic-api      # bun
+```
+
+```html
+<script type="module">
+  import { SubsonicAPI } from "https://esm.sh/subsonic-api";
+</script>
 ```
 
 ## Example Usage
