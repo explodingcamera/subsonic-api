@@ -1,6 +1,6 @@
 {
 	"name": "subsonic-api",
-	"version": "2.0.2",
+	"version": "3.0.0-0",
 	"description": "Subsonic and OpenSubsonic Client for Node.js and browsers",
 	"license": "MIT",
 	"author": "Henry Gressmann <mail@henrygressmann.de>",
@@ -11,9 +11,22 @@
 		"type": "git",
 		"url": "https://github.com/explodingcamera/subsonic-api.git"
 	},
-	"keywords": ["subsonic", "api", "music", "streaming", "media", "player", "client", "typescript"],
+	"keywords": [
+		"subsonic",
+		"api",
+		"music",
+		"streaming",
+		"media",
+		"player",
+		"client",
+		"typescript"
+	],
 	"homepage": "https://github.com/explodingcamera/subsonic-api",
-	"files": ["lib", "README.md", "LICENSE.md"],
+	"files": [
+		"lib",
+		"README.md",
+		"LICENSE.md"
+	],
 	"exports": {
 		".": "./lib/index.js"
 	},
@@ -47,5 +60,7 @@
 		"node": ">=18"
 	},
 	"engineStrict": false,
-	"trustedDependencies": ["@biomejs/biome"]
+	"trustedDependencies": [
+		"@biomejs/biome"
+	]
 }
