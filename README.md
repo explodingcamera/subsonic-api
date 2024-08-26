@@ -23,8 +23,6 @@ $ bun add subsonic-api      # bun
 
 ## Example Usage
 
-You can also try out the example on CodeSandbox [here](https://codesandbox.io/p/sandbox/subsonic-api-nlgp4c).
-
 ```ts
 import { SubsonicAPI } from "subsonic-api";
 
