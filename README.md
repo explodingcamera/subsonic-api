@@ -59,17 +59,22 @@ interface SubsonicConfig {
   url: string;
 
   // The authentication details to use when connecting to the server.
-  auth: {
-    username: string;
-    password: string;
-  };
+  auth:
+    | {
+        username: string;
+        password: string;
+      }
+    | {
+        // See https://opensubsonic.netlify.app/docs/extensions/apikeyauth/
+        apiKey: string;
+      };
 
-  // A salt to use when hashing the password
+  // A salt to use when hashing the password. Not used if `auth.apiKey` is provided.
   salt?: string;
 
   // Whether to reuse generated salts. If not provided,
   // a random salt will be generated for each request.
-  // Ignored if `salt` is provided.
+  // Ignored if `salt` is provided or `auth.apiKey` is used.
   reuseSalt?: boolean;
 
   // Whether to use a POST requests instead of GET requests.

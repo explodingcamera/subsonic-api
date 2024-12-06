@@ -10,10 +10,17 @@ interface SubsonicConfig {
 	url: string;
 
 	/** The authentication details to use when connecting to the server. */
-	auth: {
-		username: string;
-		password: string;
-	};
+	auth:
+		| {
+				username: string;
+				password: string;
+				apiKey: undefined;
+		  }
+		| {
+				username: undefined;
+				password: undefined;
+				apiKey: string;
+		  };
 
 	/** A salt to use when hashing the password (optional). */
 	salt?: string;
@@ -68,8 +75,11 @@ export default class SubsonicAPI {
 		if (!config) throw new Error("no config provided");
 		if (!config.url) throw new Error("no url provided");
 		if (!config.auth) throw new Error("no auth provided");
-		if (!config.auth.username) throw new Error("no username provided");
-		if (!config.auth.password) throw new Error("no password provided");
+
+		if (!config.auth.apiKey) {
+			if (!config.auth.username) throw new Error("no username provided");
+			if (!config.auth.password) throw new Error("no password provided");
+		}
 
 		this.#config = config;
 		this.#crypto = config.crypto || globalThis.crypto;
@@ -166,7 +176,6 @@ export default class SubsonicAPI {
 		url.searchParams.set("v", "1.16.1");
 		url.searchParams.set("c", "subsonic-api");
 		url.searchParams.set("f", "json");
-		url.searchParams.set("u", this.#config.auth.username);
 
 		if (params) {
 			for (const [key, value] of Object.entries(params)) {
@@ -181,9 +190,16 @@ export default class SubsonicAPI {
 			}
 		}
 
-		const { token, salt } = await this.#generateToken(this.#config.auth.password);
-		url.searchParams.set("t", token);
-		url.searchParams.set("s", salt);
+		if (this.#config.auth.apiKey) {
+			url.searchParams.set("apiKey", this.#config.auth.apiKey);
+		} else if (this.#config.auth.username) {
+			url.searchParams.set("u", this.#config.auth.username);
+			const { token, salt } = await this.#generateToken(this.#config.auth.password);
+			url.searchParams.set("t", token);
+			url.searchParams.set("s", salt);
+		} else {
+			throw new Error("no auth provided");
+		}
 
 		if (this.#config.post) {
 			const [path, search] = url.toString().split("?");
@@ -884,7 +900,8 @@ export default class SubsonicAPI {
 		return this.#requestJSON<SubsonicBaseResponse & Partial<{ playQueue: PlayQueue }>>("getPlayQueue", {});
 	}
 
-	async savePlayQueue(args: { id: string; current?: string; position: number }) {
+	// id is optional on OpenSubsonic compatible servers
+	async savePlayQueue(args: { id?: string; current?: string; position: number }) {
 		return this.#requestJSON<SubsonicBaseResponse>("savePlayQueue", args);
 	}
 
