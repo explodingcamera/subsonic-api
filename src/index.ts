@@ -1,8 +1,8 @@
-import { arrayBufferToBase64 } from "./utils.js";
 import { md5 } from "./md5.js";
+import { arrayBufferToBase64 } from "./utils.js";
 
 // biome-ignore format:
-import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Directory, Genres, Indexes, InternetRadioStations, License, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
+import type { AlbumID3, AlbumInfo, AlbumList, AlbumList2, AlbumWithSongsID3, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Child, Directory, Genres, Indexes, InternetRadioStations, JukeboxPlaylist, JukeboxStatus, License, Lyrics, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, PlaylistWithSongs, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
 export * from "./types.js";
 
 interface SubsonicConfig {
@@ -14,11 +14,11 @@ interface SubsonicConfig {
 		| {
 				username: string;
 				password: string;
-				apiKey: undefined;
+				apiKey?: never;
 		  }
 		| {
-				username: undefined;
-				password: undefined;
+				username?: never;
+				password?: never;
 				apiKey: string;
 		  };
 
@@ -170,7 +170,7 @@ export default class SubsonicAPI {
 		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
 
-		base += `${method}.view`;
+		if (!method.endsWith(".m3u8")) base += `${method}.view`;
 
 		const url = new URL(base);
 		url.searchParams.set("v", "1.16.1");
@@ -280,7 +280,7 @@ export default class SubsonicAPI {
 		>("getMusicFolders", {});
 	}
 
-	async getIndexes(args?: { musicFolderId?: string; ifModifiedSince?: number }) {
+	async getIndexes(args?: { musicFolderId?: string | number; ifModifiedSince?: number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				indexes: Indexes;
@@ -288,7 +288,7 @@ export default class SubsonicAPI {
 		>("getIndexes", args);
 	}
 
-	async getMusicDirectory(args: { id: string }) {
+	async getMusicDirectory(args: { id: string | number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				directory: Directory;
@@ -304,7 +304,7 @@ export default class SubsonicAPI {
 		>("getGenres", {});
 	}
 
-	async getArtists(args?: { musicFolderId?: string }) {
+	async getArtists(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				artists: ArtistsID3;
@@ -323,7 +323,7 @@ export default class SubsonicAPI {
 	async getAlbum(args: { id: string }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
-				album: AlbumID3;
+				album: AlbumWithSongsID3;
 			}
 		>("getAlbum", args);
 	}
@@ -331,12 +331,12 @@ export default class SubsonicAPI {
 	async getSong(args: { id: string }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
-				song: AlbumID3;
+				song: Child;
 			}
 		>("getSong", args);
 	}
 
-	async getVideos(args?: { musicFolderId?: string }) {
+	async getVideos(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				videos: Videos;
@@ -423,7 +423,7 @@ export default class SubsonicAPI {
 		fromYear?: number;
 		toYear?: number;
 		genre?: string;
-		musicFolderId?: string;
+		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
@@ -447,7 +447,7 @@ export default class SubsonicAPI {
 		fromYear?: number;
 		toYear?: number;
 		genre?: string;
-		musicFolderId?: string;
+		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
@@ -461,7 +461,7 @@ export default class SubsonicAPI {
 		genre?: string;
 		fromYear?: number;
 		toYear?: number;
-		musicFolderId?: string;
+		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
@@ -474,7 +474,7 @@ export default class SubsonicAPI {
 		genre: string;
 		count?: number;
 		offset?: number;
-		musicFolderId?: string;
+		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
@@ -491,7 +491,7 @@ export default class SubsonicAPI {
 		>("getNowPlaying", {});
 	}
 
-	async getStarred(args?: { musicFolderId?: string }) {
+	async getStarred(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				starred: Starred;
@@ -499,7 +499,7 @@ export default class SubsonicAPI {
 		>("getStarred", args);
 	}
 
-	async getStarred2(args?: { musicFolderId?: string }) {
+	async getStarred2(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				starred2: Starred2;
@@ -534,7 +534,7 @@ export default class SubsonicAPI {
 		albumOffset?: number;
 		songCount?: number;
 		songOffset?: number;
-		musicFolderId?: string;
+		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
@@ -551,7 +551,7 @@ export default class SubsonicAPI {
 		albumOffset?: number;
 		songCount?: number;
 		songOffset?: number;
-		musicFolderId?: string;
+		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
@@ -571,7 +571,7 @@ export default class SubsonicAPI {
 	async getPlaylist(args: { id: string }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
-				playlist: Playlist;
+				playlist: PlaylistWithSongs;
 			}
 		>("getPlaylist", args);
 	}
@@ -579,7 +579,7 @@ export default class SubsonicAPI {
 	async createPlaylist(args: { playlistId?: string; name: string; songId?: string[] }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
-				playlist: Playlist;
+				playlist: PlaylistWithSongs;
 			}
 		>("createPlaylist", args);
 	}
@@ -638,10 +638,10 @@ export default class SubsonicAPI {
 	}
 
 	async hls(args: { id: string; bitRate?: number; audioTrack?: number }) {
-		return this.#request("hls", args);
+		return this.#request("hls.m3u8", args);
 	}
 
-	async getCaptions(args: { id: string }) {
+	async getCaptions(args: { id: string; format?: "srt" | "vtt" }) {
 		return this.#request("getCaptions", args);
 	}
 
@@ -650,7 +650,11 @@ export default class SubsonicAPI {
 	}
 
 	async getLyrics(args: { artist?: string; title?: string }) {
-		return this.#request("getLyrics", args);
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				lyrics: Lyrics;
+			}
+		>("getLyrics", args);
 	}
 
 	async getAvatar(args: { username: string; size?: number }) {
@@ -751,7 +755,12 @@ export default class SubsonicAPI {
 		id?: string;
 		offset?: number;
 	}) {
-		return this.#requestJSON<SubsonicBaseResponse>("jukeboxControl", args);
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				jukeboxStatus: JukeboxStatus;
+				jukeboxPlaylist: JukeboxPlaylist;
+			}
+		>("jukeboxControl", args);
 	}
 
 	async getInternetRadioStations() {
@@ -833,7 +842,7 @@ export default class SubsonicAPI {
 		//share files with anyone.
 		videoConversionRole?: string; //	(Since 1.15.0) Whether the user is
 		//allowed to start video conversions.
-		musicFolderId?: string[]; // (Since 1.12.0) IDs of the music folders the
+		musicFolderId?: (string | number)[]; // (Since 1.12.0) IDs of the music folders the
 		// user is allowed access to.
 	}) {
 		return this.#requestJSON<SubsonicBaseResponse>("createUser", args);
@@ -864,7 +873,7 @@ export default class SubsonicAPI {
 		// files with anyone.
 		videoConversionRole?: string; // (Since 1.15.0) Whether the user is allowed
 		// to start video conversions.
-		musicFolderId?: string[]; // (Since 1.12.0) IDs of the music folders the
+		musicFolderId?: (string | number)[]; // (Since 1.12.0) IDs of the music folders the
 		// user is allowed access to.
 		maxBitRate?: string; //	(Since 1.13.0) The maximum bit rate for this
 		//user. 0 = no limit.
@@ -920,7 +929,11 @@ export default class SubsonicAPI {
 	 * @param args.fullScan Only supported by navidrome - whether to do a full scan, or just an incremental scan.
 	 */
 	async startScan(args?: { fullScan?: boolean }) {
-		return this.#requestJSON<SubsonicBaseResponse>("startScan", args);
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				scanStatus: ScanStatus;
+			}
+		>("startScan", args);
 	}
 }
 

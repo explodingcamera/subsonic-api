@@ -1,65 +1,48 @@
 {
-  "name": "subsonic-api",
-  "version": "3.0.0",
-  "description": "Subsonic and OpenSubsonic Client for Node.js and browsers",
-  "license": "MIT",
-  "author": "Henry Gressmann <mail@henrygressmann.de>",
-  "type": "module",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/explodingcamera/subsonic-api.git"
-  },
-  "keywords": [
-    "subsonic",
-    "api",
-    "music",
-    "streaming",
-    "media",
-    "player",
-    "client",
-    "typescript"
-  ],
-  "homepage": "https://github.com/explodingcamera/subsonic-api",
-  "files": [
-    "lib",
-    "README.md",
-    "LICENSE.md"
-  ],
-  "exports": {
-    ".": "./lib/index.js"
-  },
-  "scripts": {
-    "build": "bun run build:js && bun run build:types",
-    "build:js": "esbuild ./src/index.ts --minify --target=es2022 --outdir=lib --external:node:crypto --format=esm --bundle",
-    "build:types": "tsc -p tsconfig.build.json",
-    "test": "bun test",
-    "release": "release-it",
-    "preversion": "npm run build",
-    "format": "biome format ./src --write",
-    "lint": "biome check ./src"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "bun-types": "^1.1.38",
-    "esbuild": "^0.24.0",
-    "release-it": "^17.10.0"
-  },
-  "release-it": {
-    "git": {
-      "commitMessage": "chore: release v${version}"
-    },
-    "github": {
-      "release": true
-    }
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "engineStrict": false,
-  "trustedDependencies": [
-    "@biomejs/biome",
-    "esbuild"
-  ]
+	"name": "subsonic-api",
+	"version": "3.0.0",
+	"description": "Subsonic and OpenSubsonic Client for Node.js and browsers",
+	"license": "MIT",
+	"author": "Henry Gressmann <mail@henrygressmann.de>",
+	"type": "module",
+	"main": "lib/index.js",
+	"types": "lib/index.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/explodingcamera/subsonic-api.git"
+	},
+	"keywords": ["subsonic", "api", "music", "streaming", "media", "player", "client", "typescript"],
+	"homepage": "https://github.com/explodingcamera/subsonic-api",
+	"files": ["lib", "README.md", "LICENSE.md"],
+	"exports": {
+		".": "./lib/index.js"
+	},
+	"scripts": {
+		"build": "bun run build:js && bun run build:types",
+		"build:js": "esbuild ./src/index.ts --minify --target=es2022 --outdir=lib --external:node:crypto --format=esm --bundle",
+		"build:types": "tsc -p tsconfig.build.json",
+		"release": "release-it",
+		"preversion": "npm run build",
+		"format": "biome format ./src --write",
+		"lint": "biome check ./src"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"bun-types": "^1.1.38",
+		"esbuild": "^0.24.0",
+		"release-it": "^17.10.0"
+	},
+	"release-it": {
+		"git": {
+			"commitMessage": "chore: release v${version}"
+		},
+		"github": {
+			"release": true
+		}
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"engineStrict": false,
+	"trustedDependencies": ["@biomejs/biome", "esbuild"]
 }

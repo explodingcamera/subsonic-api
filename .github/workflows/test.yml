@@ -1,19 +1,25 @@
 name: Test
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
 
 jobs:
   test:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Use Node.js 20.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
@@ -21,4 +27,8 @@ jobs:
         run: bun install && bun run build
 
       - name: Run Tests
-        run: bun run test
+        env:
+          SUBSONIC_URL: ${{ secrets.SUBSONIC_URL }}
+          SUBSONIC_USER: ${{ secrets.SUBSONIC_USER }}
+          SUBSONIC_PASS: ${{ secrets.SUBSONIC_PASS }}
+        run: bun test --timeout 10000

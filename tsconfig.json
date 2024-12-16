@@ -1,34 +1,35 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "react",
-    "target": "ES2017",
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "lib": [
-      "DOM",
-      "ESNext"
+    "compilerOptions": {
+        "strict": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "jsx": "react",
+        "target": "ES2017",
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "lib": [
+            "DOM",
+            "ESNext"
+        ],
+        "module": "ESNext",
+        "outDir": "./lib",
+        "allowJs": true,
+        "checkJs": false,
+        "declaration": true,
+        "types": [
+            "bun-types"
+        ]
+    },
+    "include": [
+        "**/src/**/*",
+        "**/__tests__/**/*",
+        "examples/**/*",
+        "src/tests/.test.ts"
     ],
-    "module": "ESNext",
-    "outDir": "./lib",
-    "allowJs": true,
-    "checkJs": false,
-    "declaration": true,
-    "types": [
-      "bun-types"
+    "exclude": [
+        "node_modules",
+        "lib"
     ]
-  },
-  "include": [
-    "**/src/**/*",
-    "**/__tests__/**/*",
-    "examples/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "lib"
-  ]
 }

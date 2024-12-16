@@ -222,6 +222,7 @@ export interface License {
 export interface Lyrics {
 	artist?: string;
 	title?: string;
+	value?: string;
 }
 
 export type MediaType = "music" | "podcast" | "audiobook" | "video";

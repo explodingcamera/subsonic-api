@@ -4,3 +4,4 @@ lib
 
 .pnp.*
 .pnpm-debug.log
+.env.test
