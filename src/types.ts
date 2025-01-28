@@ -165,6 +165,7 @@ export interface Error {
 }
 
 export interface Genre {
+	value: string;
 	albumCount: number;
 	songCount: number;
 }
