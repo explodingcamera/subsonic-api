@@ -11,6 +11,37 @@ export interface AlbumID3 {
 	songCount: number;
 	starred?: Date;
 	year?: number;
+	version?: string;
+	played?: string;
+	userRating?: number;
+	recordLabels?: RecordLabel[];
+	musicBrainzId?: string;
+	genres?: string[];
+	artists?: ArtistID3[];
+	displayArtist?: string;
+	releaseTypes?: string[];
+	moods?: string[];
+	sortName?: string;
+	originalReleaseDate?: ItemDate;
+	releaseDate?: ItemDate;
+	isCompilation?: boolean;
+	explicitStatus?: string;
+	discTitles?: DiscTitle[];
+}
+
+export interface DiscTitle {
+	disc: number;
+	title: string;
+}
+
+export interface ItemDate {
+	year?: number;
+	month?: number;
+	day?: number;
+}
+
+export interface RecordLabel {
+	name: string;
 }
 
 export interface AlbumInfo {
@@ -50,6 +81,9 @@ export interface ArtistID3 {
 	id: string;
 	name: string;
 	starred?: Date;
+	musicBrainzId?: string;
+	sortName?: string;
+	roles?: string[];
 }
 
 export interface ArtistInfo extends ArtistInfoBase {
@@ -146,6 +180,36 @@ export interface Child {
 	type?: MediaType;
 	userRating?: number;
 	year?: number;
+	played?: string;
+	bpm?: number;
+	comment?: string;
+	sortName?: string;
+	musicBrainzId?: string;
+	genres?: string[];
+	artists?: ArtistID3[];
+	displayArtist?: string;
+	albumArtists?: ArtistID3[];
+	displayAlbumArtist?: string;
+	contributors?: Contributor[];
+	displayComposer?: string;
+	moods?: string[];
+	replayGain?: ReplayGain;
+	explicitStatus?: string;
+}
+
+export interface Contributor {
+	role: string;
+	subRole?: string;
+	artist?: ArtistID3;
+}
+
+export interface ReplayGain {
+	trackGain: number;
+	albumGain: number;
+	trackPeak: number;
+	albumPeak: number;
+	baseGain: number;
+	fallbackGain: number;
 }
 
 export interface Directory {
@@ -162,6 +226,7 @@ export interface Directory {
 export interface Error {
 	code: number;
 	message?: string;
+	helpUrl?: string;
 }
 
 export interface Genre {

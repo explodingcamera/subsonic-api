@@ -28,8 +28,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"bun-types": "^1.2.4",
-		"esbuild": "^0.25.0",
+		"bun-types": "^1.2.9",
+		"esbuild": "^0.25.2",
 		"release-it": "^18.1.2"
 	},
 	"release-it": {
@@ -46,6 +46,6 @@
 	"engineStrict": false,
 	"trustedDependencies": ["@biomejs/biome", "esbuild"],
 	"dependencies": {
-		"typescript": "^5.8.2"
+		"typescript": "^5.8.3"
 	}
 }

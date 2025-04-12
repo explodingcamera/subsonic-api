@@ -2,7 +2,7 @@ import { md5 } from "./md5.js";
 import { arrayBufferToBase64 } from "./utils.js";
 
 // biome-ignore format:
-import type { AlbumInfo, AlbumList, AlbumList2, AlbumWithSongsID3, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Child, Directory, Genres, Indexes, InternetRadioStations, JukeboxPlaylist, JukeboxStatus, License, Lyrics, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, PlaylistWithSongs, Playlists, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
+import type { AlbumInfo, AlbumList, AlbumList2, AlbumWithSongsID3, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Child, Directory, Genres, Indexes, InternetRadioStations, JukeboxPlaylist, JukeboxStatus, License, Lyrics, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, PlaylistWithSongs, Playlists, PodcastEpisode, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
 export * from "./types.js";
 
 interface SubsonicConfig {
@@ -735,6 +735,20 @@ export default class SubsonicAPI {
 
 	async downloadPodcastEpisode(args: { id: string }) {
 		return this.#request("downloadPodcastEpisode", args);
+	}
+
+	/**
+	 * Returns details for a podcast episode.
+	 * Only supported by OpenSubsonic compatible servers with the `getPodcastEpisode` extension.
+	 *
+	 * https://opensubsonic.netlify.app/docs/endpoints/getPodcastEpisode/
+	 */
+	async getPodcastEpisode(args: { id: string }) {
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				podcastEpisode: PodcastEpisode;
+			}
+		>("getPodcastEpisode", args);
 	}
 
 	async jukeboxControl(args: {
