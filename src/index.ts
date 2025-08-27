@@ -766,7 +766,7 @@ export default class SubsonicAPI {
 			| "set";
 		index?: number;
 		gain?: number;
-		id?: string;
+		id?: string | string[];
 		offset?: number;
 	}) {
 		return this.#requestJSON<
