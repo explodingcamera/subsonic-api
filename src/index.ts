@@ -170,8 +170,7 @@ export default class SubsonicAPI {
 		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
 
-		if (!method.endsWith(".m3u8")) base += `${method}.view`;
-
+		if (!method.includes(".")) base += `${method}.view`;
 		const url = new URL(base);
 		url.searchParams.set("v", "1.16.1");
 		url.searchParams.set("c", "subsonic-api");
@@ -685,7 +684,7 @@ export default class SubsonicAPI {
 		>("getShares", {});
 	}
 
-	async createShare(args: { id: string; description?: string; expires?: number }) {
+	async createShare(args: { id: string | string[]; description?: string; expires?: number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				shares: Shares;

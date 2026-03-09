@@ -76,11 +76,12 @@ describe("basic", () => {
 			songId: [randomSongId!],
 		});
 		expect(playlist?.id).toBeDefined();
+		const playlistIdId = playlist?.id;
 
-		const playlistInfo = await api.getPlaylist({ id: playlist?.id! });
+		const playlistInfo = await api.getPlaylist({ id: playlistIdId! });
 		expect(playlistInfo.playlist.entry?.length).toBeGreaterThan(0);
 
-		const deleteResponse = await api.deletePlaylist({ id: playlist?.id! });
+		const deleteResponse = await api.deletePlaylist({ id: playlistIdId! });
 		expect(deleteResponse.status).toBe("ok");
 
 		// Check server ping
