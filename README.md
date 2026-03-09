@@ -82,11 +82,11 @@ interface SubsonicConfig {
   post?: boolean;
 
   // The fetch implementation to use. If not provided, the global fetch will be used.
-  fetch?: Fetch;
+  fetch?: typeof fetch;
 
   // The crypto implementation to use. If not provided, the global WebCrypto object
   // or the Node.js crypto module will be used.
-  crypto?: WebCrypto;
+  crypto?: Crypto;
 }
 ```
 

@@ -19,6 +19,55 @@ describe("basic", () => {
 		expect(status).toBe("ok");
 	});
 
+	test("date parsing", async () => {
+		// Get an album which has created and starred date fields
+		const { randomSongs } = await api.getRandomSongs({ size: 1 });
+		const songId = randomSongs.song?.[0]?.id;
+		expect(songId).toBeDefined();
+
+		// Get album from the song
+		const { song } = await api.getSong({ id: songId! });
+		expect(song.created).toBeDefined();
+
+		// Verify date is parsed to Date object (not a string)
+		expect(song.created instanceof Date).toBe(true);
+	});
+
+	test("license and server info", async () => {
+		// Get license info
+		const { license } = await api.getLicense();
+		expect(license.valid).toBeDefined();
+
+		// Test date parsing on optional license fields
+		if (license.licenseExpires) {
+			expect(license.licenseExpires instanceof Date).toBe(true);
+		}
+		if (license.trialExpires) {
+			expect(license.trialExpires instanceof Date).toBe(true);
+		}
+	});
+
+	test("genres", async () => {
+		const { genres } = await api.getGenres();
+		expect(genres.genre).toBeDefined();
+		expect(genres.genre?.length).toBeGreaterThan(0);
+
+		const firstGenre = genres.genre?.[0];
+		expect(firstGenre?.value).toBeDefined();
+		expect(firstGenre?.songCount).toBeDefined();
+	});
+
+	test("now playing and scan status", async () => {
+		// Get now playing (may be empty if nothing is playing)
+		const { nowPlaying } = await api.getNowPlaying();
+		expect(nowPlaying).toBeDefined();
+
+		// Get scan status
+		const response = await api.getScanStatus();
+		expect(response.scanStatus).toBeDefined();
+		expect(response.scanStatus.scanning).toBeDefined();
+	});
+
 	test("basic usage", async () => {
 		// Fetch music folders
 		const { musicFolders } = await api.getMusicFolders();

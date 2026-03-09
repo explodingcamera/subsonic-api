@@ -2,14 +2,14 @@ export interface AlbumID3 {
 	artist?: string;
 	artistId?: string;
 	coverArt?: string;
-	created: Date;
+	created: Date | string;
 	duration: number;
 	genre?: string;
 	id: string;
 	name: string;
 	playCount?: number;
 	songCount: number;
-	starred?: Date;
+	starred?: Date | string;
 	year?: number;
 	version?: string;
 	played?: string;
@@ -70,7 +70,7 @@ export interface Artist {
 	averageRating?: number;
 	id: string;
 	name: string;
-	starred?: Date;
+	starred?: Date | string;
 	userRating?: number;
 }
 
@@ -80,7 +80,7 @@ export interface ArtistID3 {
 	coverArt?: string;
 	id: string;
 	name: string;
-	starred?: Date;
+	starred?: Date | string;
 	musicBrainzId?: string;
 	sortName?: string;
 	roles?: string[];
@@ -118,12 +118,10 @@ export interface AudioTrack {
 	name?: string;
 }
 
-export type AverageRating = number;
-
 export interface Bookmark {
-	changed: Date;
+	changed: Date | string;
 	comment?: string;
-	created: Date;
+	created: Date | string;
 	position: number;
 	username: string;
 	entry: Child;
@@ -158,7 +156,7 @@ export interface Child {
 	bookmarkPosition?: number;
 	contentType?: string;
 	coverArt?: string;
-	created?: Date;
+	created?: Date | string;
 	discNumber?: number;
 	duration?: number;
 	genre?: string;
@@ -171,7 +169,7 @@ export interface Child {
 	path?: string;
 	playCount?: number;
 	size?: number;
-	starred?: Date;
+	starred?: Date | string;
 	suffix?: string;
 	title: string;
 	track?: number;
@@ -218,15 +216,9 @@ export interface Directory {
 	name: string;
 	parent?: string;
 	playCount?: number;
-	starred?: Date;
+	starred?: Date | string;
 	userRating?: number;
 	child?: Child[];
-}
-
-export interface Error {
-	code: number;
-	message?: string;
-	helpUrl?: string;
 }
 
 export interface Genre {
@@ -280,8 +272,8 @@ export interface JukeboxStatus {
 
 export interface License {
 	email?: string;
-	licenseExpires?: Date;
-	trialExpires?: Date;
+	licenseExpires?: Date | string;
+	trialExpires?: Date | string;
 	valid: boolean;
 }
 
@@ -318,10 +310,10 @@ export interface NowPlayingEntry extends Child {
 }
 
 export interface Playlist {
-	changed: Date;
+	changed: Date | string;
 	comment?: string;
 	coverArt?: string;
-	created: Date;
+	created: Date | string;
 	duration: number;
 	id: string;
 	name: string;
@@ -340,7 +332,7 @@ export interface PlaylistWithSongs extends Playlist {
 }
 
 export interface PlayQueue {
-	changed: Date;
+	changed: Date | string;
 	changedBy: string;
 	current?: number | string; // string in navidrome
 	position?: number;
@@ -363,7 +355,7 @@ export interface PodcastChannel {
 export interface PodcastEpisode extends Child {
 	channelId: string;
 	description?: string;
-	publishDate?: Date;
+	publishDate?: Date | string;
 	status: PodcastStatus;
 	streamId?: string;
 }
@@ -373,15 +365,6 @@ export interface Podcasts {
 }
 
 export type PodcastStatus = "new" | "downloading" | "completed" | "error" | "deleted" | "skipped";
-
-export interface BaseResponse {
-	status: ResponseStatus;
-	version: string;
-	type: string;
-	serverVersion: string;
-}
-
-export type ResponseStatus = "ok" | "failed";
 
 export interface ScanStatus {
 	count?: number;
@@ -407,11 +390,11 @@ export interface SearchResult3 {
 }
 
 export interface Share {
-	created: Date;
+	created: Date | string;
 	description?: string;
-	expires?: Date;
+	expires?: Date | string;
 	id: string;
-	lastVisited?: Date;
+	lastVisited?: Date | string;
 	url: string;
 	username: string;
 	visitCount: number;
@@ -452,7 +435,7 @@ export interface TopSongs {
 
 export interface User {
 	adminRole: boolean;
-	avatarLastChanged?: Date;
+	avatarLastChanged?: Date | string;
 	commentRole: boolean;
 	coverArtRole: boolean;
 	downloadRole: boolean;
@@ -471,13 +454,9 @@ export interface User {
 	folder?: number[];
 }
 
-export type UserRating = number;
-
 export interface Users {
 	user?: User[];
 }
-
-export type Version = string;
 
 export interface VideoConversion {
 	audioTrackId?: number;

@@ -1,5 +1,5 @@
 import { md5 } from "./md5.js";
-import { arrayBufferToBase64 } from "./utils.js";
+import { arrayBufferToBase64, createDateReviver } from "./utils.js";
 
 // biome-ignore format: too much
 import type { AlbumInfo, AlbumList, AlbumList2, AlbumWithSongsID3, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Child, Directory, Genres, Indexes, InternetRadioStations, JukeboxPlaylist, JukeboxStatus, License, Lyrics, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, PlaylistWithSongs, Playlists, PodcastEpisode, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
@@ -52,19 +52,33 @@ interface SubsonicConfig {
 	crypto?: Crypto;
 }
 
-export type SubsonicBaseResponse =
+export type SubsonicBaseResponse = (
 	| {
-			status: string;
-			version: string;
-			openSubsonic?: false;
+			status: "ok";
 	  }
 	| {
-			status: string;
-			version: string;
-			openSubsonic: true;
-			type: string;
-			serverVersion: string;
-	  };
+			status: "failed";
+			error: SubsonicError;
+	  }
+) &
+	(
+		| {
+				openSubsonic?: false;
+				version: string;
+		  }
+		| {
+				version: string;
+				openSubsonic: true;
+				type: string;
+				serverVersion: string;
+		  }
+	);
+
+export interface SubsonicError {
+	code: number;
+	message?: string;
+	helpUrl?: string;
+}
 
 export default class SubsonicAPI {
 	#config: SubsonicConfig;
@@ -150,10 +164,21 @@ export default class SubsonicAPI {
 		return this.#requestJSON<T>(method, params);
 	}
 
-	async #requestJSON<T>(method: string, args?: Record<string, unknown>) {
+	async #requestJSON<T>(method: string, args?: Record<string, unknown>, dateKeys: string[] = []) {
 		return this.#request(method, args)
-			.then(async (res) => res.json())
-			.then(async (res) => res?.["subsonic-response"] as Promise<T>);
+			.then(async (res) => res.text())
+			.then((text) => {
+				const data = dateKeys.length > 0 ? JSON.parse(text, createDateReviver(dateKeys)) : JSON.parse(text);
+				return data?.["subsonic-response"] as T;
+			});
+	}
+
+	async getAlbum(args: { id: string }) {
+		return this.#requestJSON<
+			SubsonicBaseResponse & {
+				album: AlbumWithSongsID3;
+			}
+		>("getAlbum.view", args, ["created", "starred"]);
 	}
 
 	/**
@@ -169,8 +194,7 @@ export default class SubsonicAPI {
 	async #request(method: string, params?: Record<string, unknown>) {
 		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
-
-		if (!method.includes(".")) base += `${method}.view`;
+		base += method;
 		const url = new URL(base);
 		url.searchParams.set("v", "1.16.1");
 		url.searchParams.set("c", "subsonic-api");
@@ -234,7 +258,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				openSubsonicExtensions: OpenSubsonicExtensions[];
 			}
-		>("getOpenSubsonicExtensions", {});
+		>("getOpenSubsonicExtensions.view", {});
 	}
 
 	/**
@@ -248,7 +272,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				lyricsList: StructuredLyrics[];
 			}
-		>("getLyricsBySongId", args);
+		>("getLyricsBySongId.view", args);
 	}
 
 	// ----------
@@ -256,7 +280,7 @@ export default class SubsonicAPI {
 	// ----------
 
 	async ping() {
-		return this.#requestJSON<SubsonicBaseResponse>("ping", {});
+		return this.#requestJSON<SubsonicBaseResponse>("ping.view", {});
 	}
 
 	async getLicense() {
@@ -264,7 +288,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				license: License;
 			}
-		>("getLicense", {});
+		>("getLicense.view", {});
 	}
 
 	// ------------
@@ -276,7 +300,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				musicFolders: MusicFolders;
 			}
-		>("getMusicFolders", {});
+		>("getMusicFolders.view", {});
 	}
 
 	async getIndexes(args?: { musicFolderId?: string | number; ifModifiedSince?: number }) {
@@ -284,7 +308,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				indexes: Indexes;
 			}
-		>("getIndexes", args);
+		>("getIndexes.view", args, ["starred"]);
 	}
 
 	async getMusicDirectory(args: { id: string | number }) {
@@ -292,7 +316,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				directory: Directory;
 			}
-		>("getMusicDirectory", args);
+		>("getMusicDirectory.view", args, ["created", "starred"]);
 	}
 
 	async getGenres() {
@@ -300,7 +324,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				genres: Genres;
 			}
-		>("getGenres", {});
+		>("getGenres.view", {});
 	}
 
 	async getArtists(args?: { musicFolderId?: string | number }) {
@@ -308,7 +332,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				artists: ArtistsID3;
 			}
-		>("getArtists", args);
+		>("getArtists.view", args, ["starred"]);
 	}
 
 	async getArtist(args: { id: string }) {
@@ -316,15 +340,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				artist: ArtistWithAlbumsID3;
 			}
-		>("getArtist", args);
-	}
-
-	async getAlbum(args: { id: string }) {
-		return this.#requestJSON<
-			SubsonicBaseResponse & {
-				album: AlbumWithSongsID3;
-			}
-		>("getAlbum", args);
+		>("getArtist.view", args, ["starred"]);
 	}
 
 	async getSong(args: { id: string }) {
@@ -332,7 +348,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				song: Child;
 			}
-		>("getSong", args);
+		>("getSong.view", args, ["created", "starred"]);
 	}
 
 	async getVideos(args?: { musicFolderId?: string | number }) {
@@ -340,7 +356,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				videos: Videos;
 			}
-		>("getVideos", args);
+		>("getVideos.view", args, ["created", "starred"]);
 	}
 
 	async getVideoInfo(args: { id: string }) {
@@ -348,7 +364,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				videoInfo: VideoInfo;
 			}
-		>("getVideoInfo", args);
+		>("getVideoInfo.view", args, ["created"]);
 	}
 
 	async getArtistInfo(args: { id: string; count?: number; includeNotPresent?: boolean }) {
@@ -356,7 +372,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				artistInfo: ArtistInfo;
 			}
-		>("getArtistInfo", args);
+		>("getArtistInfo.view", args);
 	}
 
 	async getArtistInfo2(args: { id: string; count?: number; includeNotPresent?: boolean }) {
@@ -364,7 +380,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				artistInfo2: ArtistInfo2;
 			}
-		>("getArtistInfo2", args);
+		>("getArtistInfo2.view", args);
 	}
 
 	async getAlbumInfo(args: { id: string }) {
@@ -372,7 +388,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				albumInfo: AlbumInfo;
 			}
-		>("getAlbumInfo", args);
+		>("getAlbumInfo.view", args);
 	}
 
 	async getAlbumInfo2(args: { id: string }) {
@@ -380,7 +396,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				albumInfo: AlbumInfo;
 			}
-		>("getAlbumInfo2", args);
+		>("getAlbumInfo2.view", args);
 	}
 
 	async getSimilarSongs(args: { id: string; count?: number }) {
@@ -388,7 +404,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				similarSongs: SimilarSongs;
 			}
-		>("getSimilarSongs", args);
+		>("getSimilarSongs.view", args);
 	}
 
 	async getSimilarSongs2(args: { id: string; count?: number }) {
@@ -396,15 +412,15 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				similarSongs2: SimilarSongs2;
 			}
-		>("getSimilarSongs2", args);
+		>("getSimilarSongs2.view", args);
 	}
 
-	async getTopSongs(args: { count?: number }) {
+	async getTopSongs(args: { artist: string; count?: number }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				topSongs: TopSongs;
 			}
-		>("getTopSongs", args);
+		>("getTopSongs.view", args);
 	}
 
 	async getAlbumList(args: {
@@ -412,11 +428,13 @@ export default class SubsonicAPI {
 			| "alphabeticalByName"
 			| "alphabeticalByArtist"
 			| "byYear"
+			| "byGenre"
 			| "random"
 			| "newest"
 			| "highest"
 			| "frequent"
-			| "recent";
+			| "recent"
+			| "starred";
 		size?: number;
 		offset?: number;
 		fromYear?: number;
@@ -428,7 +446,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				albumList: AlbumList;
 			}
-		>("getAlbumList", args);
+		>("getAlbumList.view", args, ["created", "starred"]);
 	}
 
 	async getAlbumList2(args: {
@@ -436,11 +454,13 @@ export default class SubsonicAPI {
 			| "alphabeticalByName"
 			| "alphabeticalByArtist"
 			| "byYear"
+			| "byGenre"
 			| "random"
 			| "newest"
 			| "highest"
 			| "frequent"
-			| "recent";
+			| "recent"
+			| "starred";
 		size?: number;
 		offset?: number;
 		fromYear?: number;
@@ -452,7 +472,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				albumList2: AlbumList2;
 			}
-		>("getAlbumList2", args);
+		>("getAlbumList2.view", args, ["created", "starred"]);
 	}
 
 	async getRandomSongs(args?: {
@@ -466,7 +486,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				randomSongs: Songs;
 			}
-		>("getRandomSongs", args);
+		>("getRandomSongs.view", args, ["created", "starred"]);
 	}
 
 	async getSongsByGenre(args: {
@@ -479,7 +499,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				songsByGenre: Songs;
 			}
-		>("getSongsByGenre", args);
+		>("getSongsByGenre.view", args, ["created", "starred"]);
 	}
 
 	async getNowPlaying() {
@@ -487,7 +507,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				nowPlaying: NowPlaying;
 			}
-		>("getNowPlaying", {});
+		>("getNowPlaying.view", {});
 	}
 
 	async getStarred(args?: { musicFolderId?: string | number }) {
@@ -495,7 +515,18 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				starred: Starred;
 			}
-		>("getStarred", args);
+		>("getStarred.view", args, [
+			"created",
+			"changed",
+			"starred",
+			"expires",
+			"lastPlayed",
+			"lastScan",
+			"licenseExpires",
+			"trialExpires",
+			"publishDate",
+			"lastVisited",
+		]);
 	}
 
 	async getStarred2(args?: { musicFolderId?: string | number }) {
@@ -503,26 +534,18 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				starred2: Starred2;
 			}
-		>("getStarred2", args);
-	}
-
-	/**
-	 * @deprecated Deprecated since 1.4.0, use search2 instead.
-	 */
-	async search(args?: {
-		artist?: string;
-		album?: string;
-		title?: string;
-		any?: string;
-		count?: number;
-		offset?: number;
-		newerThan: number;
-	}) {
-		return this.#requestJSON<
-			SubsonicBaseResponse & {
-				searchResult2: SearchResult2;
-			}
-		>("search2", args);
+		>("getStarred2.view", args, [
+			"created",
+			"changed",
+			"starred",
+			"expires",
+			"lastPlayed",
+			"lastScan",
+			"licenseExpires",
+			"trialExpires",
+			"publishDate",
+			"lastVisited",
+		]);
 	}
 
 	async search2(args: {
@@ -539,7 +562,18 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				searchResult2: SearchResult2;
 			}
-		>("search2", args);
+		>("search2.view", args, [
+			"created",
+			"changed",
+			"starred",
+			"expires",
+			"lastPlayed",
+			"lastScan",
+			"licenseExpires",
+			"trialExpires",
+			"publishDate",
+			"lastVisited",
+		]);
 	}
 
 	async search3(args: {
@@ -556,7 +590,18 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				searchResult3: SearchResult3;
 			}
-		>("search3", args);
+		>("search3.view", args, [
+			"created",
+			"changed",
+			"starred",
+			"expires",
+			"lastPlayed",
+			"lastScan",
+			"licenseExpires",
+			"trialExpires",
+			"publishDate",
+			"lastVisited",
+		]);
 	}
 
 	async getPlaylists(args?: { username?: string }) {
@@ -564,7 +609,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				playlists: Playlists;
 			}
-		>("getPlaylists", args);
+		>("getPlaylists.view", args, ["created", "changed", "starred"]);
 	}
 
 	async getPlaylist(args: { id: string }) {
@@ -572,15 +617,15 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				playlist: PlaylistWithSongs;
 			}
-		>("getPlaylist", args);
+		>("getPlaylist.view", args, ["created", "changed", "starred"]);
 	}
 
-	async createPlaylist(args: { playlistId?: string; name: string; songId?: string[] }) {
+	async createPlaylist(args: { playlistId?: string; name?: string; songId?: string[] }) {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				playlist: PlaylistWithSongs;
 			}
-		>("createPlaylist", args);
+		>("createPlaylist.view", args, ["created", "changed", "starred"]);
 	}
 
 	async updatePlaylist(args: {
@@ -595,7 +640,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				playlist: Playlist;
 			}
-		>("updatePlaylist", args);
+		>("updatePlaylist.view", args, ["created", "changed", "starred"]);
 	}
 
 	async deletePlaylist(args: { id: string }) {
@@ -603,7 +648,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				playlist: Playlist;
 			}
-		>("deletePlaylist", args);
+		>("deletePlaylist.view", args);
 	}
 
 	async stream(args: {
@@ -611,11 +656,11 @@ export default class SubsonicAPI {
 		maxBitRate?: number;
 		format?: "raw" | "mp3" | "ogg" | "aac";
 		timeOffset?: number;
-		size?: number;
+		size?: string;
 		estimateContentLength?: boolean;
 		converted?: boolean;
 	}) {
-		return this.#request("stream", args);
+		return this.#request("stream.view", args);
 	}
 
 	async download(args: {
@@ -633,7 +678,7 @@ export default class SubsonicAPI {
 		 */
 		timeOffset?: number;
 	}) {
-		return this.#request("download", args);
+		return this.#request("download.view", args);
 	}
 
 	async hls(args: { id: string; bitRate?: number; audioTrack?: number }) {
@@ -641,11 +686,11 @@ export default class SubsonicAPI {
 	}
 
 	async getCaptions(args: { id: string; format?: "srt" | "vtt" }) {
-		return this.#request("getCaptions", args);
+		return this.#request("getCaptions.view", args);
 	}
 
 	async getCoverArt(args: { id: string; size?: number }) {
-		return this.#request("getCoverArt", args);
+		return this.#request("getCoverArt.view", args);
 	}
 
 	async getLyrics(args: { artist?: string; title?: string }) {
@@ -653,27 +698,27 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				lyrics: Lyrics;
 			}
-		>("getLyrics", args);
+		>("getLyrics.view", args);
 	}
 
 	async getAvatar(args: { username: string; size?: number }) {
-		return this.#request("getAvatar", args);
+		return this.#request("getAvatar.view", args);
 	}
 
-	async star(args: { id?: string; albumId?: string; artistId?: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("star", args);
+	async star(args: { id?: string | string[]; albumId?: string | string[]; artistId?: string | string[] }) {
+		return this.#requestJSON<SubsonicBaseResponse>("star.view", args);
 	}
 
-	async unstar(args: { id?: string; albumId?: string; artistId?: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("unstar", args);
+	async unstar(args: { id?: string | string[]; albumId?: string | string[]; artistId?: string | string[] }) {
+		return this.#requestJSON<SubsonicBaseResponse>("unstar.view", args);
 	}
 
-	async setRating(args: { id: string; rating: number }) {
-		return this.#requestJSON<SubsonicBaseResponse>("setRating", args);
+	async setRating(args: { id: string; rating: 0 | 1 | 2 | 3 | 4 | 5 }) {
+		return this.#requestJSON<SubsonicBaseResponse>("setRating.view", args);
 	}
 
-	async scrobble(args: { id: string; submission?: boolean; time?: number }) {
-		return this.#requestJSON<SubsonicBaseResponse>("scrobble", args);
+	async scrobble(args: { id: string | string[]; submission?: boolean; time?: number }) {
+		return this.#requestJSON<SubsonicBaseResponse>("scrobble.view", args);
 	}
 
 	async getShares() {
@@ -681,7 +726,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				shares: Shares;
 			}
-		>("getShares", {});
+		>("getShares.view", {});
 	}
 
 	async createShare(args: { id: string | string[]; description?: string; expires?: number }) {
@@ -689,15 +734,15 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				shares: Shares;
 			}
-		>("createShare", args);
+		>("createShare.view", args, ["created", "expires", "lastVisited"]);
 	}
 
 	async updateShare(args: { id: string; description?: string; expires?: number }) {
-		return this.#requestJSON<SubsonicBaseResponse>("updateShare", args);
+		return this.#requestJSON<SubsonicBaseResponse>("updateShare.view", args);
 	}
 
 	async deleteShare(args: { id: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("deleteShare", args);
+		return this.#requestJSON<SubsonicBaseResponse>("deleteShare.view", args);
 	}
 
 	async getPodcasts(args?: { id?: string; includeEpisodes?: boolean }) {
@@ -705,7 +750,18 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				podcasts: Podcasts;
 			}
-		>("getPodcasts", args);
+		>("getPodcasts.view", args, [
+			"created",
+			"changed",
+			"starred",
+			"expires",
+			"lastPlayed",
+			"lastScan",
+			"licenseExpires",
+			"trialExpires",
+			"publishDate",
+			"lastVisited",
+		]);
 	}
 
 	async getNewestPodcasts(args?: { since?: number }) {
@@ -713,27 +769,27 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				newestPodcasts: NewestPodcasts;
 			}
-		>("getNewestPodcasts", args);
+		>("getNewestPodcasts.view", args, ["publishDate"]);
 	}
 
 	async refreshPodcasts() {
-		return this.#requestJSON<SubsonicBaseResponse>("refreshPodcasts", {});
+		return this.#requestJSON<SubsonicBaseResponse>("refreshPodcasts.view", {});
 	}
 
 	async createPodcastChannel(args: { url: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("createPodcastChannel", args);
+		return this.#requestJSON<SubsonicBaseResponse>("createPodcastChannel.view", args);
 	}
 
 	async deletePodcastChannel(args: { id: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("deletePodcastChannel", args);
+		return this.#requestJSON<SubsonicBaseResponse>("deletePodcastChannel.view", args);
 	}
 
 	async deletePodcastEpisode(args: { id: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("deletePodcastEpisode", args);
+		return this.#requestJSON<SubsonicBaseResponse>("deletePodcastEpisode.view", args);
 	}
 
 	async downloadPodcastEpisode(args: { id: string }) {
-		return this.#request("downloadPodcastEpisode", args);
+		return this.#request("downloadPodcastEpisode.view", args);
 	}
 
 	/**
@@ -747,7 +803,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				podcastEpisode: PodcastEpisode;
 			}
-		>("getPodcastEpisode", args);
+		>("getPodcastEpisode.view", args);
 	}
 
 	async jukeboxControl(args: {
@@ -773,7 +829,7 @@ export default class SubsonicAPI {
 				jukeboxStatus: JukeboxStatus;
 				jukeboxPlaylist: JukeboxPlaylist;
 			}
-		>("jukeboxControl", args);
+		>("jukeboxControl.view", args);
 	}
 
 	async getInternetRadioStations() {
@@ -781,11 +837,11 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				internetRadioStations: InternetRadioStations;
 			}
-		>("getInternetRadioStations", {});
+		>("getInternetRadioStations.view", {});
 	}
 
 	async createInternetRadioStation(args: { name: string; streamUrl: string; homepageUrl?: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("createInternetRadioStation", args);
+		return this.#requestJSON<SubsonicBaseResponse>("createInternetRadioStation.view", args);
 	}
 
 	async updateInternetRadioStation(args: {
@@ -794,11 +850,11 @@ export default class SubsonicAPI {
 		streamUrl?: string;
 		homepageUrl?: string;
 	}) {
-		return this.#requestJSON<SubsonicBaseResponse>("updateInternetRadioStation", args);
+		return this.#requestJSON<SubsonicBaseResponse>("updateInternetRadioStation.view", args);
 	}
 
 	async deleteInternetRadioStation(args: { id: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("deleteInternetRadioStation", args);
+		return this.#requestJSON<SubsonicBaseResponse>("deleteInternetRadioStation.view", args);
 	}
 
 	async getChatMessages(args?: { since?: number }) {
@@ -806,11 +862,11 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				chatMessages: ChatMessages;
 			}
-		>("getChatMessages", args);
+		>("getChatMessages.view", args);
 	}
 
 	async addChatMessage(args: { message: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("addChatMessage", args);
+		return this.#requestJSON<SubsonicBaseResponse>("addChatMessage.view", args);
 	}
 
 	async getUser(args?: { username?: string }) {
@@ -818,7 +874,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				user: User;
 			}
-		>("getUser", args);
+		>("getUser.view", args);
 	}
 
 	async getUsers() {
@@ -826,80 +882,97 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				users: Users;
 			}
-		>("getUsers", {});
+		>("getUsers.view", {});
 	}
 
 	async createUser(args: {
-		username: string; // The name of the new user.
-		password: string; // The password of the new user, either in clear text of
-		// hex-encoded (see above).
-		email: string; // The email address of the new user.
+		/** The name of the new user. */
+		username: string;
+		/** The password of the new user, either in clear text of hex-encoded (see above). */
+		password: string;
+		/** The email address of the new user. */
+		email: string;
 
-		ldapAuthenticated?: string; //	Whether the user is authenicated in LDAP.
-		adminRole?: string; //	Whether the user is administrator.
-		settingsRole?: string; //	Whether the user is allowed to change personal
-		//settings and password.
-		streamRole?: string; //	Whether the user is allowed to play files.
-		jukeboxRole?: string; //	Whether the user is allowed to play files in
-		//jukebox mode.
-		downloadRole?: string; //	Whether the user is allowed to download files.
-		uploadRole?: string; //	Whether the user is allowed to upload files.
-		playlistRole?: string; //	Whether the user is allowed to create and delete
-		//playlists. Since 1.8.0, changing this role has no effect.
-		coverArtRole?: string; //	Whether the user is allowed to change cover art
-		//and tags.
-		commentRole?: string; //	Whether the user is allowed to create and edit
-		//comments and ratings.
-		podcastRole?: string; //	Whether the user is allowed to administrate Podcasts.
-		shareRole?: string; //	(Since 1.8.0) Whether the user is allowed to
-		//share files with anyone.
-		videoConversionRole?: string; //	(Since 1.15.0) Whether the user is
-		//allowed to start video conversions.
-		musicFolderId?: (string | number)[]; // (Since 1.12.0) IDs of the music folders the
-		// user is allowed access to.
+		/** Whether the user is authenticated in LDAP. */
+		ldapAuthenticated?: string;
+		/** Whether the user is administrator. */
+		adminRole?: string;
+		/** Whether the user is allowed to change personal settings and password. */
+		settingsRole?: string;
+		/** Whether the user is allowed to play files. */
+		streamRole?: string;
+		/** Whether the user is allowed to play files in jukebox mode. */
+		jukeboxRole?: string;
+		/** Whether the user is allowed to download files. */
+		downloadRole?: string;
+		/** Whether the user is allowed to upload files. */
+		uploadRole?: string;
+		/** Whether the user is allowed to create and delete playlists. Since 1.8.0, changing this role has no effect. */
+		playlistRole?: string;
+		/** Whether the user is allowed to change cover art and tags. */
+		coverArtRole?: string;
+		/** Whether the user is allowed to create and edit comments and ratings. */
+		commentRole?: string;
+		/** Whether the user is allowed to administrate Podcasts. */
+		podcastRole?: string;
+		/** (Since 1.8.0) Whether the user is allowed to share files with anyone. */
+		shareRole?: string;
+		/** (Since 1.15.0) Whether the user is allowed to start video conversions. */
+		videoConversionRole?: string;
+		/** (Since 1.12.0) IDs of the music folders the user is allowed access to. */
+		musicFolderId?: (string | number)[];
 	}) {
-		return this.#requestJSON<SubsonicBaseResponse>("createUser", args);
+		return this.#requestJSON<SubsonicBaseResponse>("createUser.view", args);
 	}
 
 	async updateUser(args: {
-		username: string; // The name of the new user.
-		password: string; // The password of the new user, either in clear text of
-		// hex-encoded (see above).
-		email: string; // The email address of the new user.
+		/** The name of the new user. */
+		username: string;
+		/** The password of the new user, either in clear text of hex-encoded (see above). */
+		password: string;
+		/** The email address of the new user. */
+		email: string;
 
-		ldapAuthenticated?: string; // Whether the user is authenicated in LDAP.
-		adminRole?: string; // Whether the user is administrator.
-		settingsRole?: string; //	Whether the user is allowed to change personal
-		//settings and password.
-		streamRole?: string; //	Whether the user is allowed to play files.
-		jukeboxRole?: string; // Whether the user is allowed to play files in jukebox mode.
-		downloadRole?: string; //	Whether the user is allowed to download files.
-		uploadRole?: string; //	Whether the user is allowed to upload files.
-		playlistRole?: string; //	Whether the user is allowed to create and delete
-		//playlists. Since 1.8.0, changing this role has no effect.
-		coverArtRole?: string; //	Whether the user is allowed to change cover art
-		//and tags.
-		commentRole?: string; // Whether the user is allowed to create and edit
-		// comments and ratings.
-		podcastRole?: string; // Whether the user is allowed to administrate Podcasts.
-		shareRole?: string; // (Since 1.8.0) Whether the user is allowed to share
-		// files with anyone.
-		videoConversionRole?: string; // (Since 1.15.0) Whether the user is allowed
-		// to start video conversions.
-		musicFolderId?: (string | number)[]; // (Since 1.12.0) IDs of the music folders the
-		// user is allowed access to.
-		maxBitRate?: string; //	(Since 1.13.0) The maximum bit rate for this
-		//user. 0 = no limit.
+		/** Whether the user is authenticated in LDAP. */
+		ldapAuthenticated?: boolean;
+		/** Whether the user is administrator. */
+		adminRole?: boolean;
+		/** Whether the user is allowed to change personal settings and password. */
+		settingsRole?: boolean;
+		/** Whether the user is allowed to play files. */
+		streamRole?: boolean;
+		/** Whether the user is allowed to play files in jukebox mode. */
+		jukeboxRole?: boolean;
+		/** Whether the user is allowed to download files. */
+		downloadRole?: boolean;
+		/** Whether the user is allowed to upload files. */
+		uploadRole?: boolean;
+		/** Whether the user is allowed to create and delete playlists. Since 1.8.0, changing this role has no effect. */
+		playlistRole?: boolean;
+		/** Whether the user is allowed to change cover art and tags. */
+		coverArtRole?: boolean;
+		/** Whether the user is allowed to create and edit comments and ratings. */
+		commentRole?: boolean;
+		/** Whether the user is allowed to administrate Podcasts. */
+		podcastRole?: boolean;
+		/** (Since 1.8.0) Whether the user is allowed to share files with anyone. */
+		shareRole?: boolean;
+		/** (Since 1.15.0) Whether the user is allowed to start video conversions. */
+		videoConversionRole?: boolean;
+		/** (Since 1.12.0) IDs of the music folders the user is allowed access to. */
+		musicFolderId?: (string | number)[];
+		/** (Since 1.13.0) The maximum bit rate for this user. 0 = no limit. */
+		maxBitRate?: string;
 	}) {
-		return this.#requestJSON<SubsonicBaseResponse>("createUser", args);
+		return this.#requestJSON<SubsonicBaseResponse>("updateUser.view", args);
 	}
 
 	async deleteUser(args: { username: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("deleteUser", args);
+		return this.#requestJSON<SubsonicBaseResponse>("deleteUser.view", args);
 	}
 
 	async changePassword(args: { username: string; password: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("changePassword", args);
+		return this.#requestJSON<SubsonicBaseResponse>("changePassword.view", args);
 	}
 
 	async getBookmarks() {
@@ -907,34 +980,41 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				bookmarks: Bookmarks;
 			}
-		>("getBookmarks", {});
+		>("getBookmarks.view", {});
 	}
 
 	async createBookmark(args: { id: string; position: number; comment?: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("createBookmark", args);
+		return this.#requestJSON<SubsonicBaseResponse>("createBookmark.view", args);
 	}
 
 	async deleteBookmark(args: { id: string }) {
-		return this.#requestJSON<SubsonicBaseResponse>("deleteBookmark", args);
+		return this.#requestJSON<SubsonicBaseResponse>("deleteBookmark.view", args);
 	}
 
 	async getPlayQueue() {
-		return this.#requestJSON<SubsonicBaseResponse & Partial<{ playQueue: PlayQueue }>>("getPlayQueue", {});
+		return this.#requestJSON<SubsonicBaseResponse & Partial<{ playQueue: PlayQueue }>>(
+			"getPlayQueue.view",
+			{},
+		);
 	}
 
-	// id is optional on OpenSubsonic compatible servers
-	async savePlayQueue(args: { id?: string; current?: string; position: number }) {
-		return this.#requestJSON<SubsonicBaseResponse>("savePlayQueue", args);
+	/**
+	 * @param args.id Optional on OpenSubsonic-compatible servers
+	 */
+	async savePlayQueue(args: { id?: string | string[]; current?: string; position: number }) {
+		return this.#requestJSON<SubsonicBaseResponse>("savePlayQueue.view", args);
 	}
 
 	async getScanStatus() {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
 				scanStatus: ScanStatus;
-				lastScan?: number;
+				/** Only supported by Navidrome */
+				lastScan?: Date | string;
+				/** Only supported by Navidrome */
 				folderCount?: number;
 			}
-		>("getScanStatus", {});
+		>("getScanStatus.view", {}, ["lastScan"]);
 	}
 
 	/**
@@ -946,7 +1026,7 @@ export default class SubsonicAPI {
 			SubsonicBaseResponse & {
 				scanStatus: ScanStatus;
 			}
-		>("startScan", args);
+		>("startScan.view", args);
 	}
 }
 

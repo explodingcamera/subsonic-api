@@ -11,3 +11,13 @@ export function arrayBufferToBase64(bytes: Uint8Array) {
 
 	return globalThis.btoa(binary).replace(/\+/g, "~").replace(/\//g, "_").replace(/=/g, "");
 }
+
+export function createDateReviver(keys: string[]) {
+	const keySet = new Set(keys);
+	return (key: string, value: unknown) => {
+		if (keySet.has(key) && typeof value === "string") {
+			return new Date(value);
+		}
+		return value;
+	};
+}
