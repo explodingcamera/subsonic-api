@@ -133,3 +133,11 @@ customJSON<T>(method: string, params: Params): Promise<T>
 ```
 
 Allows you to make a custom request to the server and parse the response as JSON.
+
+### `buildUrl`
+
+```ts
+buildUrl(method: string, params: Record<string, unknown>) {
+```
+
+Builds a complete URL for a Subsonic API request with authentication and query parameters.

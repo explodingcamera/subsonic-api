@@ -191,7 +191,14 @@ export default class SubsonicAPI {
 		return base;
 	}
 
-	async #request(method: string, params?: Record<string, unknown>) {
+	/**
+ 	* Builds a complete URL for a Subsonic API request with authentication and query parameters.
+ 	*/
+	async buildUrl(method: string, params: Record<string, unknown>) {
+		return this.#buildUrl(method, params);
+	}
+
+	async #buildUrl(method: string, params?: Record<string, unknown>): Promise<URL> {
 		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
 		base += method;
@@ -223,6 +230,12 @@ export default class SubsonicAPI {
 		} else {
 			throw new Error("no auth provided");
 		}
+
+		return url
+	}
+
+	async #request(method: string, params?: Record<string, unknown>) {
+		const url = await this.#buildUrl(method, params)
 
 		if (this.#config.post) {
 			const [path, search] = url.toString().split("?");
