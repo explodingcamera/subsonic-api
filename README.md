@@ -43,7 +43,7 @@ console.log(randomSongs);
 `subsonic-api` supports all of the Subsonic API methods as documented [here](http://www.subsonic.org/pages/api.jsp), up to API version 1.16.1 / Subsonic 6.1.4. Additionally, most of [OpenSubsonic's new API methods](https://opensubsonic.netlify.app/) are also supported.
 All methods return a promise that resolves to the JSON response from the server.
 
-Additionally, the following methods are available:
+See the [JSDoc documentation](https://www.jsdocs.io/package/subsonic-api#SubsonicAPI) for a complete list of supported methods and their parameters.
 
 ### `new SubsonicAPI`
 
