@@ -32,7 +32,7 @@
 	},
 	"scripts": {
 		"build": "bun run build:js && bun run build:types",
-		"build:js": "esbuild ./src/index.ts --minify --target=es2022 --outdir=lib --external:node:crypto --format=esm --bundle",
+		"build:js": "esbuild ./src/index.ts --minify --target=es2025 --outdir=lib --external:node:crypto --format=esm --bundle",
 		"build:types": "tsc -p tsconfig.build.json",
 		"release": "release-it",
 		"preversion": "npm run build",
