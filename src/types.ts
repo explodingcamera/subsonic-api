@@ -307,6 +307,9 @@ export interface NowPlayingEntry extends Child {
 	playerId: number;
 	playerName?: string;
 	username: string;
+	state?: "starting" | "playing" | "paused" | "stopped";
+	positionMs?: number;
+	playbackRate?: number;
 }
 
 export interface Playlist {

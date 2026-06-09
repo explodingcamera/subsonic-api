@@ -721,6 +721,17 @@ export default class SubsonicAPI {
 		return this.#requestJSON<SubsonicBaseResponse>("scrobble.view", args);
 	}
 
+	async reportPlayback(args: {
+		mediaId: string;
+		mediaType: "song" | "podcast";
+		positionMs: number;
+		state: "starting" | "playing" | "paused" | "stopped";
+		playbackRate?: number;
+		ignoreScrobble?: boolean;
+	}) {
+		return this.#requestJSON<SubsonicBaseResponse>("reportPlayback.view", args);
+	}
+
 	async getShares() {
 		return this.#requestJSON<
 			SubsonicBaseResponse & {
