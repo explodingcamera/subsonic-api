@@ -137,7 +137,7 @@ export default class SubsonicAPI {
 				throw new Error("crypto not available");
 			}
 		}
-		return arrayBufferToBase64(this.#crypto.getRandomValues(new Uint8Array(16)));
+		return arrayBufferToBase64(this.#crypto!.getRandomValues(new Uint8Array(16)));
 	}
 
 	async #generateToken(password: string) {
