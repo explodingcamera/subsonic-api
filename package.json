@@ -40,10 +40,10 @@
 		"lint": "biome check ./src"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.11",
-		"bun-types": "^1.4.0",
+		"@biomejs/biome": "^2.5.14",
+		"bun-types": "^1.4.2",
 		"esbuild": "^0.28.2",
-		"release-it": "^21.0.2",
+		"release-it": "^21.0.3",
 		"typescript": "^7.0.2"
 	},
 	"release-it": {

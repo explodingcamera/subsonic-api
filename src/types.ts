@@ -343,6 +343,15 @@ export interface PlayQueue {
 	entry?: Child[];
 }
 
+export interface PlayQueueByIndex {
+	currentIndex?: number;
+	position?: number;
+	username: string;
+	changed: Date | string;
+	changedBy: string;
+	entry?: Child[];
+}
+
 export interface PodcastChannel {
 	coverArt?: string;
 	description?: string;
@@ -485,6 +494,14 @@ export interface OpenSubsonicExtensions {
 
 // OpenSubsonic Extensions
 
+export interface TokenInfo {
+	username: string;
+}
+
+export interface LyricsList {
+	structuredLyrics?: StructuredLyrics[];
+}
+
 export interface StructuredLyrics {
 	lang: string;
 	synced: boolean;
@@ -492,9 +509,98 @@ export interface StructuredLyrics {
 	displayArtist?: string;
 	displayTitle?: string;
 	offset?: number;
+	kind?: "main" | "translation" | "pronunciation";
+	agents?: Agent[];
+	cueLine?: CueLine[];
 }
 
 export interface Line {
 	value: string;
 	start?: number;
+}
+
+export interface Agent {
+	id: string;
+	role: "main" | "voice" | "bg" | "group";
+	name?: string;
+}
+
+export interface CueLine {
+	index: number;
+	start?: number;
+	end?: number;
+	value: string;
+	agentId?: string;
+	cue: Cue[];
+}
+
+export interface Cue {
+	start: number;
+	end?: number;
+	byteStart: number;
+	byteEnd: number;
+	value: string;
+}
+
+export interface SonicMatch {
+	entry: Child;
+	similarity: number;
+}
+
+export interface ClientInfo {
+	name: string;
+	platform: string;
+	maxAudioBitrate?: number;
+	maxTranscodingAudioBitrate?: number;
+	directPlayProfiles?: DirectPlayProfile[];
+	transcodingProfiles?: TranscodingProfile[];
+	codecProfiles?: CodecProfile[];
+}
+
+export interface DirectPlayProfile {
+	containers: string[];
+	audioCodecs: string[];
+	protocols: ("http" | "hls")[];
+	maxAudioChannels?: number;
+}
+
+export interface TranscodingProfile {
+	container: string;
+	audioCodec: string;
+	protocol: "http" | "hls";
+	maxAudioChannels?: number;
+}
+
+export interface CodecProfile {
+	type: "AudioCodec";
+	name: string;
+	limitations?: Limitation[];
+}
+
+export interface Limitation {
+	name: "audioChannels" | "audioBitrate" | "audioProfile" | "audioSamplerate" | "audioBitdepth";
+	comparison: "Equals" | "NotEquals" | "LessThanEqual" | "GreaterThanEqual";
+	values: string[];
+	required: boolean;
+}
+
+export interface StreamDetails {
+	protocol: "http" | "hls";
+	container: string;
+	codec: string;
+	audioChannels?: number;
+	audioBitrate?: number;
+	audioProfile?: string;
+	audioSamplerate?: number;
+	audioBitdepth?: number;
+}
+
+export interface TranscodeDecision {
+	canDirectPlay: boolean;
+	canTranscode: boolean;
+	transcodeReason?: string[];
+	errorReason?: string;
+	transcodeParams?: string;
+	sourceStream?: StreamDetails;
+	transcodeStream?: StreamDetails;
 }

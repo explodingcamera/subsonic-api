@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v3.4.0 - 2026-09-17
+
+### Added
+
+- Support for the `indexBasedQueue` extension with `getPlayQueueByIndex` and `savePlayQueueByIndex`
+- Support for the `sonicSimilarity` extension with `getSonicSimilarTracks` and `findSonicPath`
+- Support for the `transcoding` extension with `getTranscodeDecision` and `getTranscodeStream`
+- Support for the `topSongsByArtistId` extension
+- Support for version 2 of the `songLyrics` extension, including enhanced word-level timing and lyric layers
+- `tokenInfo` support for the `apiKeyAuthentication` extension
+- `getCoverArtURL` and `streamURL` helpers for passing authenticated media URLs to external components
+- Generic `SubsonicResponse<T>` response type
+
+### Fixed
+
+- Corrected the `getLyricsBySongId` response type to use the `lyricsList` response structure
+- API key authentication no longer requires an unused crypto implementation
+
 ## v3.3.0 - 2026-05-10
 
 ### Fixed

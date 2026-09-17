@@ -2,7 +2,7 @@ import { md5 } from "./md5.js";
 import { arrayBufferToBase64, createDateReviver } from "./utils.js";
 
 // biome-ignore format: too much
-import type { AlbumInfo, AlbumList, AlbumList2, AlbumWithSongsID3, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Child, Directory, Genres, Indexes, InternetRadioStations, JukeboxPlaylist, JukeboxStatus, License, Lyrics, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, Playlist, PlaylistWithSongs, Playlists, PodcastEpisode, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, Songs, Starred, Starred2, StructuredLyrics, TopSongs, User, Users, VideoInfo, Videos } from "./types.js";
+import type { AlbumInfo, AlbumList, AlbumList2, AlbumWithSongsID3, ArtistInfo, ArtistInfo2, ArtistWithAlbumsID3, ArtistsID3, Bookmarks, ChatMessages, Child, ClientInfo, Directory, Genres, Indexes, InternetRadioStations, JukeboxPlaylist, JukeboxStatus, License, Lyrics, LyricsList, MusicFolders, NewestPodcasts, NowPlaying, OpenSubsonicExtensions, PlayQueue, PlayQueueByIndex, Playlist, PlaylistWithSongs, Playlists, PodcastEpisode, Podcasts, ScanStatus, SearchResult2, SearchResult3, Shares, SimilarSongs, SimilarSongs2, SonicMatch, Songs, Starred, Starred2, TokenInfo, TopSongs, TranscodeDecision, User, Users, VideoInfo, Videos } from "./types.js";
 export * from "./types.js";
 
 interface SubsonicConfig {
@@ -19,6 +19,7 @@ interface SubsonicConfig {
 		| {
 				username?: never;
 				password?: never;
+				/** An API key supported by the OpenSubsonic `apiKeyAuthentication` extension. */
 				apiKey: string;
 		  };
 
@@ -35,9 +36,11 @@ interface SubsonicConfig {
 	reuseSalt?: boolean;
 
 	/**
-	 * Whether to use a POST requests instead of GET requests.
+	 * Whether to use POST requests instead of GET requests.
 	 *
 	 * Only supported by OpenSubsonic compatible servers with the `formPost` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/extensions/formpost/
 	 */
 	post?: boolean;
 
@@ -50,6 +53,23 @@ interface SubsonicConfig {
 	 * If not provided, the global WebCrypto object or the Node.js crypto module will be used.
 	 */
 	crypto?: Crypto;
+}
+
+/** Parameters accepted by the `stream` endpoint. */
+export interface StreamParams {
+	id: string;
+	maxBitRate?: number;
+	format?: "raw" | "mp3" | "ogg" | "aac";
+	timeOffset?: number;
+	size?: string;
+	estimateContentLength?: boolean;
+	converted?: boolean;
+}
+
+/** Parameters accepted by the `getCoverArt` endpoint. */
+export interface CoverArtParams {
+	id: string;
+	size?: number;
 }
 
 export type SubsonicBaseResponse = (
@@ -74,6 +94,13 @@ export type SubsonicBaseResponse = (
 		  }
 	);
 
+/**
+ * A Subsonic response with endpoint-specific fields.
+ *
+ * @typeParam T - The fields returned by the endpoint.
+ */
+export type SubsonicResponse<T extends object> = SubsonicBaseResponse & T;
+
 export interface SubsonicError {
 	code: number;
 	message?: string;
@@ -97,7 +124,7 @@ export default class SubsonicAPI {
 
 		this.#config = config;
 		this.#crypto = config.crypto || globalThis.crypto;
-		if (!this.#crypto && !this.#config.salt)
+		if (!this.#crypto && !this.#config.salt && !this.#config.auth.apiKey)
 			throw new Error("no crypto implementation available. Provide a salt or crypto implementation.");
 
 		this.#fetch = (config.fetch || globalThis.fetch).bind(globalThis);
@@ -164,8 +191,13 @@ export default class SubsonicAPI {
 		return this.#requestJSON<T>(method, params);
 	}
 
-	async #requestJSON<T>(method: string, args?: Record<string, unknown>, dateKeys: string[] = []) {
-		return this.#request(method, args)
+	async #requestJSON<T>(
+		method: string,
+		args?: Record<string, unknown>,
+		dateKeys: string[] = [],
+		jsonBody?: unknown,
+	) {
+		return this.#request(method, args, jsonBody)
 			.then(async (res) => res.text())
 			.then((text) => {
 				const data = dateKeys.length > 0 ? JSON.parse(text, createDateReviver(dateKeys)) : JSON.parse(text);
@@ -175,9 +207,9 @@ export default class SubsonicAPI {
 
 	async getAlbum(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				album: AlbumWithSongsID3;
-			}
+			}>
 		>("getAlbum.view", args, ["created", "starred"]);
 	}
 
@@ -191,7 +223,7 @@ export default class SubsonicAPI {
 		return base;
 	}
 
-	async #request(method: string, params?: Record<string, unknown>) {
+	async #buildURL(method: string, params?: object) {
 		let base = this.baseURL();
 		if (!base.endsWith("rest/")) base += "rest/";
 		base += method;
@@ -224,6 +256,22 @@ export default class SubsonicAPI {
 			throw new Error("no auth provided");
 		}
 
+		return url;
+	}
+
+	async #request(method: string, params?: object, jsonBody?: unknown) {
+		const url = await this.#buildURL(method, params);
+
+		if (jsonBody !== undefined) {
+			return this.#fetch(url.toString(), {
+				method: "POST",
+				body: JSON.stringify(jsonBody),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+		}
+
 		if (this.#config.post) {
 			const [path, search] = url.toString().split("?");
 			return this.#fetch(path, {
@@ -248,31 +296,136 @@ export default class SubsonicAPI {
 	// -----------------
 
 	/**
-	 * List the OpenSubsonic extensions supported by this server.\
+	 * List the OpenSubsonic extensions supported by this server.
 	 * Only supported by OpenSubsonic compatible servers.
 	 *
-	 * https://opensubsonic.netlify.app/docs/endpoints/getopensubsonicextensions/
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/getopensubsonicextensions/
 	 */
 	async getOpenSubsonicExtensions() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				openSubsonicExtensions: OpenSubsonicExtensions[];
-			}
+			}>
 		>("getOpenSubsonicExtensions.view", {});
 	}
 
 	/**
-	 * Get structured lyrics for a song.\
+	 * Get structured lyrics for a song.
+	 * Set `enhanced` to true to request word-level timing and lyric layers from servers
+	 * supporting version 2 of the `songLyrics` extension.
+	 *
 	 * Only supported by OpenSubsonic compatible servers with the `songLyrics` extension.
 	 *
-	 * https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
 	 */
-	async getLyricsBySongId(args: { id: string }) {
+	async getLyricsBySongId(args: { id: string; enhanced?: boolean }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
-				lyricsList: StructuredLyrics[];
-			}
+			SubsonicResponse<{
+				lyricsList: LyricsList;
+			}>
 		>("getLyricsBySongId.view", args);
+	}
+
+	/**
+	 * Return information about the configured API key.
+	 * Only supported by servers with the `apiKeyAuthentication` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/tokeninfo/
+	 */
+	async tokenInfo() {
+		return this.#requestJSON<SubsonicResponse<{ tokenInfo: TokenInfo }>>("tokenInfo.view", {});
+	}
+
+	/**
+	 * Return the play queue using a zero-based current track index.
+	 * Only supported by servers with the `indexBasedQueue` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/getplayqueuebyindex/
+	 */
+	async getPlayQueueByIndex() {
+		return this.#requestJSON<SubsonicResponse<{ playQueueByIndex: PlayQueueByIndex }>>(
+			"getPlayQueueByIndex.view",
+			{},
+			["changed"],
+		);
+	}
+
+	/**
+	 * Save the play queue using a zero-based current track index.
+	 * Pass no IDs to clear the saved queue.
+	 *
+	 * Only supported by servers with the `indexBasedQueue` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/saveplayqueuebyindex/
+	 */
+	async savePlayQueueByIndex(
+		args: { id?: string | string[]; currentIndex?: number; position?: number } = {},
+	) {
+		return this.#requestJSON<SubsonicBaseResponse>("savePlayQueueByIndex.view", args);
+	}
+
+	/**
+	 * Return tracks that are similar according to sonic analysis.
+	 * Only supported by servers with the `sonicSimilarity` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/getsonicsimilartracks/
+	 */
+	async getSonicSimilarTracks(args: { id: string; count?: number }) {
+		return this.#requestJSON<SubsonicResponse<{ sonicMatch: SonicMatch[] }>>(
+			"getSonicSimilarTracks.view",
+			args,
+			["created", "starred"],
+		);
+	}
+
+	/**
+	 * Find a sequence of sonically similar tracks between two songs.
+	 * Only supported by servers with the `sonicSimilarity` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/findsonicpath/
+	 */
+	async findSonicPath(args: { startSongId: string; endSongId: string; count?: number }) {
+		return this.#requestJSON<SubsonicResponse<{ sonicMatch: SonicMatch[] }>>("findSonicPath.view", args, [
+			"created",
+			"starred",
+		]);
+	}
+
+	/**
+	 * Ask the server whether media should be played directly or transcoded.
+	 * This endpoint always sends the client information as a JSON POST body.
+	 *
+	 * Only supported by servers with the `transcoding` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/gettranscodedecision/
+	 */
+	async getTranscodeDecision(args: {
+		mediaId: string;
+		mediaType: "song" | "podcast";
+		clientInfo: ClientInfo;
+	}) {
+		const { clientInfo, ...params } = args;
+		return this.#requestJSON<SubsonicResponse<{ transcodeDecision: TranscodeDecision }>>(
+			"getTranscodeDecision.view",
+			params,
+			[],
+			clientInfo,
+		);
+	}
+
+	/**
+	 * Retrieve a transcoded stream using parameters returned by `getTranscodeDecision`.
+	 * Only supported by servers with the `transcoding` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/gettranscodestream/
+	 */
+	async getTranscodeStream(args: {
+		mediaId: string;
+		mediaType: "song" | "podcast";
+		transcodeParams: string;
+		offset?: number;
+	}) {
+		return this.#request("getTranscodeStream.view", args);
 	}
 
 	// ----------
@@ -285,9 +438,9 @@ export default class SubsonicAPI {
 
 	async getLicense() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				license: License;
-			}
+			}>
 		>("getLicense.view", {});
 	}
 
@@ -297,129 +450,139 @@ export default class SubsonicAPI {
 
 	async getMusicFolders() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				musicFolders: MusicFolders;
-			}
+			}>
 		>("getMusicFolders.view", {});
 	}
 
 	async getIndexes(args?: { musicFolderId?: string | number; ifModifiedSince?: number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				indexes: Indexes;
-			}
+			}>
 		>("getIndexes.view", args, ["starred"]);
 	}
 
 	async getMusicDirectory(args: { id: string | number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				directory: Directory;
-			}
+			}>
 		>("getMusicDirectory.view", args, ["created", "starred"]);
 	}
 
 	async getGenres() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				genres: Genres;
-			}
+			}>
 		>("getGenres.view", {});
 	}
 
 	async getArtists(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				artists: ArtistsID3;
-			}
+			}>
 		>("getArtists.view", args, ["starred"]);
 	}
 
 	async getArtist(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				artist: ArtistWithAlbumsID3;
-			}
+			}>
 		>("getArtist.view", args, ["starred"]);
 	}
 
 	async getSong(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				song: Child;
-			}
+			}>
 		>("getSong.view", args, ["created", "starred"]);
 	}
 
 	async getVideos(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				videos: Videos;
-			}
+			}>
 		>("getVideos.view", args, ["created", "starred"]);
 	}
 
 	async getVideoInfo(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				videoInfo: VideoInfo;
-			}
+			}>
 		>("getVideoInfo.view", args, ["created"]);
 	}
 
 	async getArtistInfo(args: { id: string; count?: number; includeNotPresent?: boolean }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				artistInfo: ArtistInfo;
-			}
+			}>
 		>("getArtistInfo.view", args);
 	}
 
 	async getArtistInfo2(args: { id: string; count?: number; includeNotPresent?: boolean }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				artistInfo2: ArtistInfo2;
-			}
+			}>
 		>("getArtistInfo2.view", args);
 	}
 
 	async getAlbumInfo(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				albumInfo: AlbumInfo;
-			}
+			}>
 		>("getAlbumInfo.view", args);
 	}
 
 	async getAlbumInfo2(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				albumInfo: AlbumInfo;
-			}
+			}>
 		>("getAlbumInfo2.view", args);
 	}
 
 	async getSimilarSongs(args: { id: string; count?: number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				similarSongs: SimilarSongs;
-			}
+			}>
 		>("getSimilarSongs.view", args);
 	}
 
 	async getSimilarSongs2(args: { id: string; count?: number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				similarSongs2: SimilarSongs2;
-			}
+			}>
 		>("getSimilarSongs2.view", args);
 	}
 
-	async getTopSongs(args: { artist: string; count?: number }) {
+	/**
+	 * Return the top songs for an artist.
+	 * Passing an artist ID requires the `topSongsByArtistId` extension and takes precedence over `artist`.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/gettopsongs/
+	 */
+	async getTopSongs(
+		args: ({ artist: string; id?: string } | { artist?: string; id: string }) & {
+			count?: number;
+		},
+	) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				topSongs: TopSongs;
-			}
+			}>
 		>("getTopSongs.view", args);
 	}
 
@@ -443,9 +606,9 @@ export default class SubsonicAPI {
 		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				albumList: AlbumList;
-			}
+			}>
 		>("getAlbumList.view", args, ["created", "starred"]);
 	}
 
@@ -469,9 +632,9 @@ export default class SubsonicAPI {
 		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				albumList2: AlbumList2;
-			}
+			}>
 		>("getAlbumList2.view", args, ["created", "starred"]);
 	}
 
@@ -483,9 +646,9 @@ export default class SubsonicAPI {
 		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				randomSongs: Songs;
-			}
+			}>
 		>("getRandomSongs.view", args, ["created", "starred"]);
 	}
 
@@ -496,25 +659,25 @@ export default class SubsonicAPI {
 		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				songsByGenre: Songs;
-			}
+			}>
 		>("getSongsByGenre.view", args, ["created", "starred"]);
 	}
 
 	async getNowPlaying() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				nowPlaying: NowPlaying;
-			}
+			}>
 		>("getNowPlaying.view", {});
 	}
 
 	async getStarred(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				starred: Starred;
-			}
+			}>
 		>("getStarred.view", args, [
 			"created",
 			"changed",
@@ -531,9 +694,9 @@ export default class SubsonicAPI {
 
 	async getStarred2(args?: { musicFolderId?: string | number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				starred2: Starred2;
-			}
+			}>
 		>("getStarred2.view", args, [
 			"created",
 			"changed",
@@ -559,9 +722,9 @@ export default class SubsonicAPI {
 		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				searchResult2: SearchResult2;
-			}
+			}>
 		>("search2.view", args, [
 			"created",
 			"changed",
@@ -587,9 +750,9 @@ export default class SubsonicAPI {
 		musicFolderId?: string | number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				searchResult3: SearchResult3;
-			}
+			}>
 		>("search3.view", args, [
 			"created",
 			"changed",
@@ -606,25 +769,25 @@ export default class SubsonicAPI {
 
 	async getPlaylists(args?: { username?: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				playlists: Playlists;
-			}
+			}>
 		>("getPlaylists.view", args, ["created", "changed", "starred"]);
 	}
 
 	async getPlaylist(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				playlist: PlaylistWithSongs;
-			}
+			}>
 		>("getPlaylist.view", args, ["created", "changed", "starred"]);
 	}
 
 	async createPlaylist(args: { playlistId?: string; name?: string; songId?: string[] }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				playlist: PlaylistWithSongs;
-			}
+			}>
 		>("createPlaylist.view", args, ["created", "changed", "starred"]);
 	}
 
@@ -637,30 +800,39 @@ export default class SubsonicAPI {
 		songIndexToRemove?: number[];
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				playlist: Playlist;
-			}
+			}>
 		>("updatePlaylist.view", args, ["created", "changed", "starred"]);
 	}
 
 	async deletePlaylist(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				playlist: Playlist;
-			}
+			}>
 		>("deletePlaylist.view", args);
 	}
 
-	async stream(args: {
-		id: string;
-		maxBitRate?: number;
-		format?: "raw" | "mp3" | "ogg" | "aac";
-		timeOffset?: number;
-		size?: string;
-		estimateContentLength?: boolean;
-		converted?: boolean;
-	}) {
+	/**
+	 * Stream a media file.
+	 * Using `timeOffset` for music requires the `transcodeOffset` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/stream/
+	 */
+	async stream(args: StreamParams) {
 		return this.#request("stream.view", args);
+	}
+
+	/**
+	 * Build an authenticated GET URL for streaming a media file without making a request.
+	 * This always returns a URL, even when the client is configured to use POST requests.
+	 * Treat the returned URL as sensitive because it contains authentication credentials.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/stream/
+	 */
+	async streamURL(args: StreamParams) {
+		return (await this.#buildURL("stream.view", args)).toString();
 	}
 
 	async download(args: {
@@ -689,15 +861,26 @@ export default class SubsonicAPI {
 		return this.#request("getCaptions.view", args);
 	}
 
-	async getCoverArt(args: { id: string; size?: number }) {
+	async getCoverArt(args: CoverArtParams) {
 		return this.#request("getCoverArt.view", args);
+	}
+
+	/**
+	 * Build an authenticated GET URL for cover art without making a request.
+	 * This always returns a URL, even when the client is configured to use POST requests.
+	 * Treat the returned URL as sensitive because it contains authentication credentials.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/getcoverart/
+	 */
+	async getCoverArtURL(args: CoverArtParams) {
+		return (await this.#buildURL("getCoverArt.view", args)).toString();
 	}
 
 	async getLyrics(args: { artist?: string; title?: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				lyrics: Lyrics;
-			}
+			}>
 		>("getLyrics.view", args);
 	}
 
@@ -721,6 +904,12 @@ export default class SubsonicAPI {
 		return this.#requestJSON<SubsonicBaseResponse>("scrobble.view", args);
 	}
 
+	/**
+	 * Report the current playback timeline state.
+	 * Only supported by servers with the `playbackReport` extension.
+	 *
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/reportplayback/
+	 */
 	async reportPlayback(args: {
 		mediaId: string;
 		mediaType: "song" | "podcast";
@@ -734,17 +923,17 @@ export default class SubsonicAPI {
 
 	async getShares() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				shares: Shares;
-			}
+			}>
 		>("getShares.view", {});
 	}
 
 	async createShare(args: { id: string | string[]; description?: string; expires?: number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				shares: Shares;
-			}
+			}>
 		>("createShare.view", args, ["created", "expires", "lastVisited"]);
 	}
 
@@ -758,9 +947,9 @@ export default class SubsonicAPI {
 
 	async getPodcasts(args?: { id?: string; includeEpisodes?: boolean }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				podcasts: Podcasts;
-			}
+			}>
 		>("getPodcasts.view", args, [
 			"created",
 			"changed",
@@ -777,9 +966,9 @@ export default class SubsonicAPI {
 
 	async getNewestPodcasts(args?: { since?: number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				newestPodcasts: NewestPodcasts;
-			}
+			}>
 		>("getNewestPodcasts.view", args, ["publishDate"]);
 	}
 
@@ -804,16 +993,16 @@ export default class SubsonicAPI {
 	}
 
 	/**
-	 * Returns details for a podcast episode.
+	 * Return details for a podcast episode.
 	 * Only supported by OpenSubsonic compatible servers with the `getPodcastEpisode` extension.
 	 *
-	 * https://opensubsonic.netlify.app/docs/endpoints/getPodcastEpisode/
+	 * @see https://opensubsonic.netlify.app/docs/endpoints/getpodcastepisode/
 	 */
 	async getPodcastEpisode(args: { id: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				podcastEpisode: PodcastEpisode;
-			}
+			}>
 		>("getPodcastEpisode.view", args);
 	}
 
@@ -836,18 +1025,18 @@ export default class SubsonicAPI {
 		offset?: number;
 	}) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				jukeboxStatus: JukeboxStatus;
 				jukeboxPlaylist: JukeboxPlaylist;
-			}
+			}>
 		>("jukeboxControl.view", args);
 	}
 
 	async getInternetRadioStations() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				internetRadioStations: InternetRadioStations;
-			}
+			}>
 		>("getInternetRadioStations.view", {});
 	}
 
@@ -870,9 +1059,9 @@ export default class SubsonicAPI {
 
 	async getChatMessages(args?: { since?: number }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				chatMessages: ChatMessages;
-			}
+			}>
 		>("getChatMessages.view", args);
 	}
 
@@ -882,17 +1071,17 @@ export default class SubsonicAPI {
 
 	async getUser(args?: { username?: string }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				user: User;
-			}
+			}>
 		>("getUser.view", args);
 	}
 
 	async getUsers() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				users: Users;
-			}
+			}>
 		>("getUsers.view", {});
 	}
 
@@ -988,9 +1177,9 @@ export default class SubsonicAPI {
 
 	async getBookmarks() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				bookmarks: Bookmarks;
-			}
+			}>
 		>("getBookmarks.view", {});
 	}
 
@@ -1003,10 +1192,7 @@ export default class SubsonicAPI {
 	}
 
 	async getPlayQueue() {
-		return this.#requestJSON<SubsonicBaseResponse & Partial<{ playQueue: PlayQueue }>>(
-			"getPlayQueue.view",
-			{},
-		);
+		return this.#requestJSON<SubsonicResponse<Partial<{ playQueue: PlayQueue }>>>("getPlayQueue.view", {});
 	}
 
 	/**
@@ -1018,13 +1204,13 @@ export default class SubsonicAPI {
 
 	async getScanStatus() {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				scanStatus: ScanStatus;
 				/** Only supported by Navidrome */
 				lastScan?: Date | string;
 				/** Only supported by Navidrome */
 				folderCount?: number;
-			}
+			}>
 		>("getScanStatus.view", {}, ["lastScan"]);
 	}
 
@@ -1034,9 +1220,9 @@ export default class SubsonicAPI {
 	 */
 	async startScan(args?: { fullScan?: boolean }) {
 		return this.#requestJSON<
-			SubsonicBaseResponse & {
+			SubsonicResponse<{
 				scanStatus: ScanStatus;
-			}
+			}>
 		>("startScan.view", args);
 	}
 }

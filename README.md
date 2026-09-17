@@ -1,18 +1,20 @@
 # Subsonic-API <a href="https://www.npmjs.com/package/subsonic-api"><img src="https://img.shields.io/npm/v/subsonic-api?style=flat&colorA=000000&colorB=efefef"/></a> <a href="https://github.com/explodingcamera/subsonic-api/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/explodingcamera/subsonic-api/test.yml?branch=main&style=flat&colorA=000000"/></a>
 
-A lightweight Subsonic/Opensubsonic Client written in TypeScript. Supports Node, Deno, Bun, and modern Browsers.
+A lightweight Subsonic and OpenSubsonic client for TypeScript. Supports Node.js, Deno, Bun, and modern browsers.
 
 ## Features
 
 - Supports all Subsonic API methods up to version 1.16.1 / Subsonic 6.1.4.
-- Supports most of OpenSubsonic's new API methods.
+- Supports OpenSubsonic extensions.
 - Supports both GET and POST requests.
+- Has zero runtime dependencies.
 
 ## Installation
 
 ```bash
-$ npm install subsonic-api  # npm
-$ bun add subsonic-api      # bun
+npm install subsonic-api
+# or
+bun add subsonic-api
 ```
 
 ```html
@@ -40,7 +42,7 @@ console.log(randomSongs);
 
 ## API
 
-`subsonic-api` supports all of the Subsonic API methods as documented [here](http://www.subsonic.org/pages/api.jsp), up to API version 1.16.1 / Subsonic 6.1.4. Additionally, most of [OpenSubsonic's new API methods](https://opensubsonic.netlify.app/) are also supported.
+`subsonic-api` supports all Subsonic API methods through API version 1.16.1 / Subsonic 6.1.4, along with the currently published [OpenSubsonic extensions](https://opensubsonic.netlify.app/docs/extensions/).
 All methods return a promise that resolves to the JSON response from the server.
 
 See the [JSDoc documentation](https://www.jsdocs.io/package/subsonic-api#SubsonicAPI) for a complete list of supported methods and their parameters.
@@ -77,7 +79,7 @@ interface SubsonicConfig {
   // Ignored if `salt` is provided or `auth.apiKey` is used.
   reuseSalt?: boolean;
 
-  // Whether to use a POST requests instead of GET requests.
+  // Whether to use POST requests instead of GET requests.
   // Only supported by OpenSubsonic compatible servers with the `formPost` extension.
   post?: boolean;
 
@@ -90,33 +92,24 @@ interface SubsonicConfig {
 }
 ```
 
-### `navidromeSession`
-
-```ts
-subsonicSession(): Promise<SessionInfo>
-```
-
-Creates a new Navidrome session
-
-```ts
-interface SessionInfo {
-  id: string;
-  isAdmin: boolean;
-  name: string;
-  subsonicSalt: string;
-  subsonicToken: string;
-  token: string;
-  username: string;
-}
-```
-
 ### `baseURL`
 
 ```ts
 baseURL(): string
 ```
 
-Returns the base URL of the server. Useful for interacting with other APIs like Navidrome's.
+Returns the base URL of the server. This is useful when interacting with other APIs exposed by the server.
+
+### Media URLs
+
+```ts
+const coverArtURL = await api.getCoverArtURL({ id: "cover-art-id", size: 512 });
+const streamURL = await api.streamURL({ id: "song-id", maxBitRate: 320 });
+```
+
+Returns authenticated GET URLs without making a request. These methods are useful when passing a URL to native image or media components, and they work even when the client is configured with `post: true`.
+
+The returned URLs contain authentication credentials and should be treated as sensitive.
 
 ### `custom`
 
