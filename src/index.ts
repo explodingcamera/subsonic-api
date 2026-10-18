@@ -169,8 +169,10 @@ export default class SubsonicAPI {
 
 	async #generateToken(password: string) {
 		let salt = this.#config.salt;
-		if (!salt || !this.#config.reuseSalt) salt = await this.#generateSalt();
-		if (this.#config.reuseSalt) this.#config.salt = salt;
+		if (!salt) {
+			salt = await this.#generateSalt();
+			if (this.#config.reuseSalt) this.#config.salt = salt;
+		}
 		return {
 			salt,
 			token: md5(password + salt),
@@ -1003,7 +1005,7 @@ export default class SubsonicAPI {
 			SubsonicResponse<{
 				podcastEpisode: PodcastEpisode;
 			}>
-		>("getPodcastEpisode.view", args);
+		>("getPodcastEpisode.view", args, ["created", "starred", "publishDate"]);
 	}
 
 	async jukeboxControl(args: {
@@ -1094,31 +1096,31 @@ export default class SubsonicAPI {
 		email: string;
 
 		/** Whether the user is authenticated in LDAP. */
-		ldapAuthenticated?: string;
+		ldapAuthenticated?: boolean;
 		/** Whether the user is administrator. */
-		adminRole?: string;
+		adminRole?: boolean;
 		/** Whether the user is allowed to change personal settings and password. */
-		settingsRole?: string;
+		settingsRole?: boolean;
 		/** Whether the user is allowed to play files. */
-		streamRole?: string;
+		streamRole?: boolean;
 		/** Whether the user is allowed to play files in jukebox mode. */
-		jukeboxRole?: string;
+		jukeboxRole?: boolean;
 		/** Whether the user is allowed to download files. */
-		downloadRole?: string;
+		downloadRole?: boolean;
 		/** Whether the user is allowed to upload files. */
-		uploadRole?: string;
+		uploadRole?: boolean;
 		/** Whether the user is allowed to create and delete playlists. Since 1.8.0, changing this role has no effect. */
-		playlistRole?: string;
+		playlistRole?: boolean;
 		/** Whether the user is allowed to change cover art and tags. */
-		coverArtRole?: string;
+		coverArtRole?: boolean;
 		/** Whether the user is allowed to create and edit comments and ratings. */
-		commentRole?: string;
+		commentRole?: boolean;
 		/** Whether the user is allowed to administrate Podcasts. */
-		podcastRole?: string;
+		podcastRole?: boolean;
 		/** (Since 1.8.0) Whether the user is allowed to share files with anyone. */
-		shareRole?: string;
+		shareRole?: boolean;
 		/** (Since 1.15.0) Whether the user is allowed to start video conversions. */
-		videoConversionRole?: string;
+		videoConversionRole?: boolean;
 		/** (Since 1.12.0) IDs of the music folders the user is allowed access to. */
 		musicFolderId?: (string | number)[];
 	}) {
@@ -1126,12 +1128,12 @@ export default class SubsonicAPI {
 	}
 
 	async updateUser(args: {
-		/** The name of the new user. */
+		/** The name of the user to update. */
 		username: string;
-		/** The password of the new user, either in clear text of hex-encoded (see above). */
-		password: string;
-		/** The email address of the new user. */
-		email: string;
+		/** The new password, either in clear text or hex-encoded. */
+		password?: string;
+		/** The new email address. */
+		email?: string;
 
 		/** Whether the user is authenticated in LDAP. */
 		ldapAuthenticated?: boolean;

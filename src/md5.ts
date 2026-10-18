@@ -12,9 +12,10 @@ export const md5 = (input: string) => {
     const hh = (a: number, b: number, c: number, d: number, x: number, s: number,t: number) => cm(b^c^d,a,b,x,s,t);
     const ii = (a: number, b: number, c: number, d: number, x: number, s: number,t: number) => cm(c^(b|(~d)),a,b,x,s,t);
     const sb = (x: string) => {
-       let i: any;const nblk=((x.length+8)>>6)+1;const blks=[];for(i=0;i<nblk*16;i++) { blks[i]=0 };
-       for(i=0;i<x.length;i++) {blks[i>>2]|=x.charCodeAt(i)<<((i%4)*8);}
-       blks[i>>2]|=0x80<<((i%4)*8);blks[nblk*16-2]=x.length*8;return blks;
+       const bytes = new TextEncoder().encode(x);
+       let i: any;const nblk=((bytes.length+8)>>6)+1;const blks=[];for(i=0;i<nblk*16;i++) { blks[i]=0 };
+       for(i=0;i<bytes.length;i++) {blks[i>>2]|=bytes[i]<<((i%4)*8);}
+       blks[i>>2]|=0x80<<((i%4)*8);blks[nblk*16-2]=bytes.length*8;return blks;
     }
     let i: any,x=sb(input),a=1732584193,b=-271733879,c=-1732584194,d=271733878,olda:any,oldb:any,oldc:any,oldd:any;
     for(i=0;i<x.length;i+=16) {olda=a;oldb=b;oldc=c;oldd=d;
