@@ -29,11 +29,11 @@ bun add subsonic-api
 import { SubsonicAPI } from "subsonic-api";
 
 const api = new SubsonicAPI({
-  url: "https://demo.navidrome.org",
-  auth: {
-    username: "demo",
-    password: "demo",
-  },
+	url: "https://demo.navidrome.org",
+	auth: {
+		username: "demo",
+		password: "demo",
+	},
 });
 
 const { randomSongs } = await api.getRandomSongs();
@@ -57,38 +57,38 @@ Creates a new SubsonicAPI instance.
 
 ```ts
 interface SubsonicConfig {
-  // The base URL of the Subsonic server, e.g., https://demo.navidrome.org.
-  url: string;
+	// The base URL of the Subsonic server, e.g., https://demo.navidrome.org.
+	url: string;
 
-  // The authentication details to use when connecting to the server.
-  auth:
-    | {
-        username: string;
-        password: string;
-      }
-    | {
-        // See https://opensubsonic.netlify.app/docs/extensions/apikeyauth/
-        apiKey: string;
-      };
+	// The authentication details to use when connecting to the server.
+	auth:
+		| {
+				username: string;
+				password: string;
+		  }
+		| {
+				// See https://opensubsonic.netlify.app/docs/extensions/apikeyauth/
+				apiKey: string;
+		  };
 
-  // A salt to use when hashing the password. Not used if `auth.apiKey` is provided.
-  salt?: string;
+	// A salt to use when hashing the password. Not used if `auth.apiKey` is provided.
+	salt?: string;
 
-  // Whether to reuse generated salts. If not provided,
-  // a random salt will be generated for each request.
-  // Ignored if `salt` is provided or `auth.apiKey` is used.
-  reuseSalt?: boolean;
+	// Whether to reuse generated salts. If not provided,
+	// a random salt will be generated for each request.
+	// Ignored if `salt` is provided or `auth.apiKey` is used.
+	reuseSalt?: boolean;
 
-  // Whether to use POST requests instead of GET requests.
-  // Only supported by OpenSubsonic compatible servers with the `formPost` extension.
-  post?: boolean;
+	// Whether to use POST requests instead of GET requests.
+	// Only supported by OpenSubsonic compatible servers with the `formPost` extension.
+	post?: boolean;
 
-  // The fetch implementation to use. If not provided, the global fetch will be used.
-  fetch?: typeof fetch;
+	// The fetch implementation to use. If not provided, the global fetch will be used.
+	fetch?: typeof fetch;
 
-  // The crypto implementation to use. If not provided, the global WebCrypto object
-  // or the Node.js crypto module will be used.
-  crypto?: Crypto;
+	// The crypto implementation to use. If not provided, the global WebCrypto object
+	// or the Node.js crypto module will be used.
+	crypto?: Crypto;
 }
 ```
 
